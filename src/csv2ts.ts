@@ -49,7 +49,7 @@ function capitalizeFirstLetter(string: string) {
     return string[0].toUpperCase() + string.slice(1);
 }
 
-export function csv2tsFromFile(filePath: string, cb: (result: string) => void, prefix = 'Csv') {
+export function csv2tsFromFile(filePath: string, cb: (result: string) => void, prefix = '', suffix = 'Csv') {
     let pathObject = path.parse(filePath);
-    csv2tsFromString(fs.readFileSync(filePath).toString(), prefix + capitalizeFirstLetter(pathObject.name), cb);
+    csv2tsFromString(fs.readFileSync(filePath).toString(), prefix + capitalizeFirstLetter(pathObject.name) + suffix, cb);
 }

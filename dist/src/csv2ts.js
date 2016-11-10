@@ -44,10 +44,11 @@ exports.csv2tsFromString = csv2tsFromString;
 function capitalizeFirstLetter(string) {
     return string[0].toUpperCase() + string.slice(1);
 }
-function csv2tsFromFile(filePath, cb, prefix) {
-    if (prefix === void 0) { prefix = 'Csv'; }
+function csv2tsFromFile(filePath, cb, prefix, suffix) {
+    if (prefix === void 0) { prefix = ''; }
+    if (suffix === void 0) { suffix = 'Csv'; }
     var pathObject = path.parse(filePath);
-    csv2tsFromString(fs.readFileSync(filePath).toString(), prefix + capitalizeFirstLetter(pathObject.name), cb);
+    csv2tsFromString(fs.readFileSync(filePath).toString(), prefix + capitalizeFirstLetter(pathObject.name) + suffix, cb);
 }
 exports.csv2tsFromFile = csv2tsFromFile;
 //# sourceMappingURL=csv2ts.js.map

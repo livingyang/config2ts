@@ -7,12 +7,14 @@ program.version(require(path.join(__dirname, '../..', 'package.json'))['version'
 program
     .option('-d, --dir <path>', 'set convert path. default: ./')
     .option('-o, --outDir <path>', 'set outDir path. default: same as dir')
-    .option('-p, --prefix <prefix>', 'set interface prefix. default: Csv')
+    .option('-p, --prefix <prefix>', 'set interface prefix. default: empty')
+    .option('-s, --suffix <suffix>', 'set interface suffix. default: Csv')
     .option('-f, --force', 'force convert, will convert all csv file to ts')
     .parse(process.argv);
 var dir = program['dir'] || '.';
 var outDir = program['outDir'] || dir;
-var prefix = program['prefix'] || 'Csv';
+var prefix = program['prefix'] || '';
+var suffix = program['suffix'] || 'Csv';
 var forceWrite = Boolean(program['force']);
 var _loop_1 = function(filename) {
     var pathObject = path.parse(filename);
@@ -26,7 +28,7 @@ var _loop_1 = function(filename) {
                 fs.writeFileSync(target, result);
                 console.log("csv2ts, convert: " + filename + " , to: " + target);
             }
-        }, prefix);
+        }, prefix, suffix);
     }
 };
 for (var _i = 0, _a = fs.readdirSync(dir); _i < _a.length; _i++) {
