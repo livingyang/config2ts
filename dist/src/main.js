@@ -18,7 +18,7 @@ var _loop_1 = function(filename) {
     var pathObject = path.parse(filename);
     if (pathObject.ext === '.csv') {
         csv2ts_1.csv2tsFromFile(path.join(dir, filename), function (result) {
-            var target = path.join(outDir, pathObject.name + ".ts");
+            var target = path.join(outDir, filename + ".ts");
             if (fs.existsSync(target) && forceWrite == false) {
                 console.log("csv2ts, skip convert: " + filename);
             }

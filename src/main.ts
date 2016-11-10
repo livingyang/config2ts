@@ -23,7 +23,7 @@ for (let filename of fs.readdirSync(dir)) {
     if (pathObject.ext === '.csv') {
         
         csv2tsFromFile(path.join(dir, filename), function(result) {
-            let target = path.join(outDir, `${pathObject.name}.ts`);
+            let target = path.join(outDir, `${filename}.ts`);
             if (fs.existsSync(target) && forceWrite == false) {
                 console.log(`csv2ts, skip convert: ${filename}`);
             }
