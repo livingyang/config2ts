@@ -2,11 +2,9 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 let Converter = require("csvtojson").Converter;
-let converter = new Converter();
 
 export function csv2tsFromString(csvString: string, interfaceName: string, cb: (result: string) => void) {
-            
-    converter.fromString(csvString, function(err, result) {
+    new Converter().fromString(csvString, function(err, result) {
         // generate interface
         let template = `interface ${interfaceName} {\n`;
         let first = result[0];
@@ -38,7 +36,7 @@ export function csv2tsFromString(csvString: string, interfaceName: string, cb: (
             template += `    ${key}: ${typeof(first[key])};\n`;
         }
         template += '};\n';
-        template += `export let ${interfaceName}Rows: ${interfaceName}[] = `;
+        template += `export let ${interfaceName}List: ${interfaceName}[] = `;
         template += JSON.stringify(result, null, 4);
         template += ';';
         
@@ -51,7 +49,7 @@ function capitalizeFirstLetter(string: string) {
     return string[0].toUpperCase() + string.slice(1);
 }
 
-export function csv2tsFromFile(filePath: string, cb: (result: string) => void) {
+export function csv2tsFromFile(filePath: string, cb: (result: string) => void, prefix = 'Csv') {
     let pathObject = path.parse(filePath);
-    csv2tsFromString(fs.readFileSync(filePath).toString(), capitalizeFirstLetter(pathObject.name), cb);
+    csv2tsFromString(fs.readFileSync(filePath).toString(), prefix + capitalizeFirstLetter(pathObject.name), cb);
 }

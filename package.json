@@ -6,6 +6,9 @@
   "directories": {
     "test": "test"
   },
+  "bin": {
+    "csv2ts": "./bin/csv2ts"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -13,14 +16,14 @@
     "type": "git",
     "url": "git+https://github.com/livingyang/csv2ts.git"
   },
-  "author": "",
+  "author": "livingyang",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/livingyang/csv2ts/issues"
   },
   "homepage": "https://github.com/livingyang/csv2ts#readme",
   "dependencies": {
-    "csv-parse": "^1.1.7",
+    "commander": "^2.9.0",
     "csvtojson": "^1.0.3"
   }
 }

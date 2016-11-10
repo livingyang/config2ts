@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as parse from 'csv-parse';
 import * as assert from 'assert';
 
 import {csv2tsFromFile} from '../src/csv2ts';

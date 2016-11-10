@@ -2,9 +2,8 @@
 var path = require('path');
 var fs = require('fs');
 var Converter = require("csvtojson").Converter;
-var converter = new Converter();
 function csv2tsFromString(csvString, interfaceName, cb) {
-    converter.fromString(csvString, function (err, result) {
+    new Converter().fromString(csvString, function (err, result) {
         // generate interface
         var template = "interface " + interfaceName + " {\n";
         var first = result[0];
@@ -35,7 +34,7 @@ function csv2tsFromString(csvString, interfaceName, cb) {
             template += "    " + key + ": " + typeof (first[key]) + ";\n";
         }
         template += '};\n';
-        template += "export let " + interfaceName + "Rows: " + interfaceName + "[] = ";
+        template += "export let " + interfaceName + "List: " + interfaceName + "[] = ";
         template += JSON.stringify(result, null, 4);
         template += ';';
         cb(template);
@@ -45,9 +44,10 @@ exports.csv2tsFromString = csv2tsFromString;
 function capitalizeFirstLetter(string) {
     return string[0].toUpperCase() + string.slice(1);
 }
-function csv2tsFromFile(filePath, cb) {
+function csv2tsFromFile(filePath, cb, prefix) {
+    if (prefix === void 0) { prefix = 'Csv'; }
     var pathObject = path.parse(filePath);
-    csv2tsFromString(fs.readFileSync(filePath).toString(), capitalizeFirstLetter(pathObject.name), cb);
+    csv2tsFromString(fs.readFileSync(filePath).toString(), prefix + capitalizeFirstLetter(pathObject.name), cb);
 }
 exports.csv2tsFromFile = csv2tsFromFile;
 //# sourceMappingURL=csv2ts.js.map

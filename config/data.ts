@@ -1,10 +1,10 @@
-interface Data {
+interface CsvData {
     id: number;
     name: string;
     bool: boolean;
     num: number;
 };
-export let DataRows: Data[] = [
+export let CsvDataList: CsvData[] = [
     {
         "id": 1,
         "name": "xxx",

@@ -1,6 +1,6 @@
 "use strict";
 ;
-exports.DataRows = [
+exports.CsvDataList = [
     {
         "id": 1,
         "name": "xxx",
