@@ -10,9 +10,6 @@ program
     .option('-p, --prefix <prefix>', 'set interface prefix. default: Csv')
     .option('-f, --force', 'force convert, will convert all csv file to ts')
     .parse(process.argv);
-if (program.args.length <= 0) {
-    program.help();
-}
 var dir = program['dir'] || '.';
 var outDir = program['outDir'] || dir;
 var prefix = program['prefix'] || 'Csv';
@@ -36,4 +33,5 @@ for (var _i = 0, _a = fs.readdirSync(dir); _i < _a.length; _i++) {
     var filename = _a[_i];
     _loop_1(filename);
 }
+console.log('csv2ts convert done!');
 //# sourceMappingURL=main.js.map

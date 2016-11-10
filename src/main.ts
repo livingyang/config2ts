@@ -12,10 +12,6 @@ program
   .option('-f, --force', 'force convert, will convert all csv file to ts')
   .parse(process.argv);
 
-if (program.args.length <= 0) {
-    program.help();
-}
-
 let dir = program['dir'] || '.';
 let outDir = program['outDir'] || dir;
 let prefix = program['prefix'] || 'Csv';
@@ -38,3 +34,4 @@ for (let filename of fs.readdirSync(dir)) {
         }, prefix);
     }
 }
+console.log('csv2ts convert done!');
