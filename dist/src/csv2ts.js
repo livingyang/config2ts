@@ -5,7 +5,7 @@ var Converter = require("csvtojson").Converter;
 function csv2tsFromString(csvString, interfaceName, cb) {
     new Converter().fromString(csvString, function (err, result) {
         // generate interface
-        var template = "interface " + interfaceName + " {\n";
+        var template = "export interface " + interfaceName + " {\n";
         var first = result[0];
         // transform value type 
         for (var i = 1; i < result.length; ++i) {

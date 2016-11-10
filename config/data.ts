@@ -1,4 +1,4 @@
-interface CsvData {
+export interface CsvData {
     id: number;
     name: string;
     bool: boolean;
