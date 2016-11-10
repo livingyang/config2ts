@@ -3,8 +3,8 @@ var fs = require('fs');
 var path = require('path');
 var program = require('commander');
 var csv2ts_1 = require('./csv2ts');
+program.version(require(path.join(__dirname, '../..', 'package.json'))['version']);
 program
-    .version('1.0.0')
     .option('-d, --dir <path>', 'set convert path. default: ./')
     .option('-o, --outDir <path>', 'set outDir path. default: same as dir')
     .option('-p, --prefix <prefix>', 'set interface prefix. default: Csv')

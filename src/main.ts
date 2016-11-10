@@ -3,8 +3,9 @@ import * as path from 'path';
 import * as program from 'commander';
 import {csv2tsFromFile} from './csv2ts';
 
+program.version(require(path.join(__dirname, '../..', 'package.json'))['version']);
+
 program
-  .version('1.0.0')
   .option('-d, --dir <path>', 'set convert path. default: ./')
   .option('-o, --outDir <path>', 'set outDir path. default: same as dir')
   .option('-p, --prefix <prefix>', 'set interface prefix. default: Csv')
