@@ -11,6 +11,10 @@ program
   .option('-f, --force', 'force convert, will convert all csv file to ts')
   .parse(process.argv);
 
+if (program.args.length <= 0) {
+    program.help();
+}
+
 let dir = program['dir'] || '.';
 let outDir = program['outDir'] || dir;
 let prefix = program['prefix'] || 'Csv';

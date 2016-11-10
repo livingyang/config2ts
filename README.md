@@ -1,26 +1,20 @@
 # csv2ts
 convert csv to ts file.
 
-# example
-data.csv:
-```
-id,name,bool
-number,string,boolean
-1,"xxx",true
-2,"xxx",false
-```
+# install
+run command: `npm install -g csv2ts`
 
-will convert to data.ts:
+# how to use
+csv2ts foldercontainscsv
 
+## Usage
 ```
-class dataRecord {
-    id: number;
-    name: number;
-    bool: boolean;
-}
+  Options:
 
-export let dataRecords: dataRecord[] = [
-    [1, "xxx", true],
-    [2, "xxx", false]
-]
+    -h, --help             output usage information
+    -V, --version          output the version number
+    -d, --dir <path>       set convert path. default: ./
+    -o, --outDir <path>    set outDir path. default: same as dir
+    -p, --prefix <prefix>  set interface prefix. default: Csv
+    -f, --force            force convert, will convert all csv file to ts
 ```

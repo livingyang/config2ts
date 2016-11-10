@@ -1,6 +1,6 @@
 {
   "name": "csv2ts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "convert csv to ts file.",
   "main": "index.js",
   "directories": {

@@ -10,6 +10,9 @@ program
     .option('-p, --prefix <prefix>', 'set interface prefix. default: Csv')
     .option('-f, --force', 'force convert, will convert all csv file to ts')
     .parse(process.argv);
+if (program.args.length <= 0) {
+    program.help();
+}
 var dir = program['dir'] || '.';
 var outDir = program['outDir'] || dir;
 var prefix = program['prefix'] || 'Csv';
