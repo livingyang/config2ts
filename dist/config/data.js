@@ -1,22 +1,22 @@
 "use strict";
 ;
-exports.dataRows = [
+exports.DataRows = [
     {
         "id": 1,
         "name": "xxx",
-        "bool": 1,
+        "bool": true,
         "num": 111
     },
     {
         "id": 2,
         "name": "xxx",
-        "bool": 0,
+        "bool": false,
         "num": 222
     },
     {
         "id": 3,
-        "name": "",
-        "bool": 0,
+        "name": "333",
+        "bool": false,
         "num": 0
     }
 ];
