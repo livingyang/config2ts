@@ -15,6 +15,8 @@ csv2ts foldercontainscsv
     -V, --version          output the version number
     -d, --dir <path>       set convert path. default: ./
     -o, --outDir <path>    set outDir path. default: same as dir
-    -p, --prefix <prefix>  set interface prefix. default: Csv
-    -f, --force            force convert, will convert all csv file to ts
+    -p, --prefix <prefix>  set interface prefix. default: ""
+    -s, --suffix <suffix>  set interface suffix. default: "Csv"
+    -f, --force            force write
+    -m, --merge <name>     merge all to one ts file. default: csv.ts
 ```

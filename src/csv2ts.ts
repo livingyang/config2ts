@@ -1,9 +1,10 @@
 import * as path from 'path';
 import * as fs from 'fs';
+import { resolve } from 'url';
 
 let Converter = require("csvtojson").Converter;
 
-export function csv2tsFromString(csvString: string, interfaceName: string, cb: (result: string) => void) {
+export function csv2tsFromString(csvString: string, interfaceName: string, cb: (result: string) => void) {    
     new Converter().fromString(csvString, function(err, result) {
         // generate interface
         let template = `export interface ${interfaceName} {\n`;
@@ -38,7 +39,12 @@ export function csv2tsFromString(csvString: string, interfaceName: string, cb: (
         template += '};\n';
         template += `export let ${interfaceName}List: ${interfaceName}[] = `;
         template += JSON.stringify(result, null, 4);
-        template += ';';
+        template += ';\n';
+        
+        if (typeof first['id'] === 'number') {
+            template += `export let ${interfaceName}Map: {[id: number]: ${interfaceName}} = {};\n`;
+            template += `for (const v of ${interfaceName}List) { ${interfaceName}Map[v.id] = v; };\n`;
+        }
         
         cb(template);
     });

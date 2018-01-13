@@ -1,0 +1,4 @@
+name,bool,num
+"xxx",true,111
+"xxx",,222
+333,false,
