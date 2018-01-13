@@ -5,7 +5,7 @@ convert csv to ts file.
 run command: `npm install -g csv2ts`
 
 # how to use
-csv2ts foldercontainscsv
+csv2ts folder contains csv
 
 ## Usage
 ```
@@ -17,6 +17,5 @@ csv2ts foldercontainscsv
     -o, --outDir <path>    set outDir path. default: same as dir
     -p, --prefix <prefix>  set interface prefix. default: ""
     -s, --suffix <suffix>  set interface suffix. default: "Csv"
-    -f, --force            force write
     -m, --merge <name>     merge all to one ts file. default: csv.ts
 ```
