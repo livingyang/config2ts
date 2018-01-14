@@ -6,7 +6,7 @@ let Converter = require("csvtojson").Converter;
 
 export function csv2tsFromString(csvString: string, interfaceName: string) {
     return new Promise((resolve, reject) => {
-        new Converter().fromString(csvString, function (err, result) {
+        new Converter({checkType: true}).fromString(csvString, function (err, result) {
             if (err || result.length <= 0) {
                 resolve("");
             }
