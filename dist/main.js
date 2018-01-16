@@ -21,11 +21,12 @@ let csvFiles = fs.readdirSync(dir).filter((filename) => {
     return path.parse(filename).ext === '.csv';
 });
 if (merge) {
-    Promise.all(csvFiles.map((filename) => {
-        return csv2ts_1.csv2tsFromFile(path.join(dir, filename), prefix, suffix);
-    })).then((results) => {
+    let csvFilePaths = csvFiles.map((filename) => {
+        return path.join(dir, filename);
+    });
+    csv2ts_1.csv2tsFromFileList(csvFilePaths, prefix, suffix).then((results) => {
         let mergeFile = path.join(outDir, merge);
-        fs.writeFileSync(mergeFile, results.join('\n'));
+        fs.writeFileSync(mergeFile, csv2ts_1.MergeTsFiles(results));
         console.log(`csv2ts, ${csvFiles.length} csv files, merge into: ${mergeFile}`);
     });
 }

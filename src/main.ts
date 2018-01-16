@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as program from 'commander';
-import {csv2tsFromFile} from './csv2ts';
+import {csv2tsFromFile, csv2tsFromFileList, MergeTsFiles} from './csv2ts';
 
 program.version(require(path.join(__dirname, '..', 'package.json'))['version']);
 
@@ -24,13 +24,14 @@ let csvFiles = fs.readdirSync(dir).filter((filename) => {
 });
 
 if (merge) {
-    Promise.all(csvFiles.map((filename) => {
-        return csv2tsFromFile(path.join(dir, filename), prefix, suffix);
-    })).then((results) => {
+    let csvFilePaths = csvFiles.map((filename) => {
+        return path.join(dir, filename);
+    });
+    csv2tsFromFileList(csvFilePaths, prefix, suffix).then((results: string[]) => {
         let mergeFile = path.join(outDir, merge);
-        fs.writeFileSync(mergeFile, results.join('\n'));
+        fs.writeFileSync(mergeFile, MergeTsFiles(results));
         console.log(`csv2ts, ${csvFiles.length} csv files, merge into: ${mergeFile}`);
-    })
+    });
 }
 else {
     csvFiles.forEach((filename) => {

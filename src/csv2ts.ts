@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { resolve } from 'url';
+let packageJson = require('../package.json');
 
 let Converter = require("csvtojson").Converter;
 
@@ -64,4 +65,14 @@ function capitalizeFirstLetter(string: string) {
 export function csv2tsFromFile(filePath: string, prefix = '', suffix = 'Csv') {
     let pathObject = path.parse(filePath);
     return csv2tsFromString(fs.readFileSync(filePath).toString(), prefix + capitalizeFirstLetter(pathObject.name) + suffix);
+}
+
+export function csv2tsFromFileList(fileList: string[], prefix = '', suffix = 'Csv') {
+    return Promise.all(fileList.map((filePath) => {
+        return csv2tsFromFile(filePath, prefix, suffix);
+    }));
+}
+
+export function MergeTsFiles(tsFiles: string[]) {
+    return `export let csv2ts_version = "${packageJson.version}";\n\n` + tsFiles.join('\n');
 }

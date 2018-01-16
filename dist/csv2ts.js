@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const path = require("path");
 const fs = require("fs");
+let packageJson = require('../package.json');
 let Converter = require("csvtojson").Converter;
 function csv2tsFromString(csvString, interfaceName) {
     return new Promise((resolve, reject) => {
@@ -61,4 +62,14 @@ function csv2tsFromFile(filePath, prefix = '', suffix = 'Csv') {
     return csv2tsFromString(fs.readFileSync(filePath).toString(), prefix + capitalizeFirstLetter(pathObject.name) + suffix);
 }
 exports.csv2tsFromFile = csv2tsFromFile;
+function csv2tsFromFileList(fileList, prefix = '', suffix = 'Csv') {
+    return Promise.all(fileList.map((filePath) => {
+        return csv2tsFromFile(filePath, prefix, suffix);
+    }));
+}
+exports.csv2tsFromFileList = csv2tsFromFileList;
+function MergeTsFiles(tsFiles) {
+    return `export let csv2ts_version = "${packageJson.version}";\n\n` + tsFiles.join('\n');
+}
+exports.MergeTsFiles = MergeTsFiles;
 //# sourceMappingURL=csv2ts.js.map
