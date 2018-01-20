@@ -1,4 +1,5 @@
 id,name,bool,num
-1,"xxx",true,111
+Number,String,Boolean,Number
+1,"xxx",1,111
 2,"xxx",,222
-3,333,false,
+3,333,,

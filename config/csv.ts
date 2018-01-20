@@ -1,4 +1,4 @@
-export let csv2ts_version = "1.3.0";
+export let csv2ts_version = "1.4.0";
 
 export interface DataCsv {
     id: number;

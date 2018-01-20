@@ -1,4 +1,5 @@
 name,bool,num
-"xxx",true,111
+String,Boolean,Number
+"xxx",1,111
 "xxx",,222
-333,false,
+333,,

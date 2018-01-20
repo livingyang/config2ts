@@ -1,6 +1,6 @@
 {
   "name": "csv2ts",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "convert csv to ts file.",
   "main": "index.js",
   "directories": {
@@ -10,7 +10,8 @@
     "csv2ts": "./bin/csv2ts"
   },
   "scripts": {
-    "test": "node_modules/.bin/jest"
+    "test": "node_modules/.bin/jest",
+    "watch-test": "node_modules/.bin/jest --watch"
   },
   "repository": {
     "type": "git",
@@ -24,9 +25,10 @@
   "homepage": "https://github.com/livingyang/csv2ts#readme",
   "dependencies": {
     "commander": "^2.9.0",
-    "csvtojson": "^1.1.9"
+    "d3": "^4.12.2"
   },
   "devDependencies": {
+    "@types/d3": "^4.12.0",
     "@types/jest": "^22.0.1",
     "@types/node": "^9.3.0",
     "jest": "^22.0.6",

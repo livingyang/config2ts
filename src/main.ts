@@ -27,19 +27,15 @@ if (merge) {
     let csvFilePaths = csvFiles.map((filename) => {
         return path.join(dir, filename);
     });
-    csv2tsFromFileList(csvFilePaths, prefix, suffix).then((results: string[]) => {
-        let mergeFile = path.join(outDir, merge);
-        fs.writeFileSync(mergeFile, MergeTsFiles(results));
-        console.log(`csv2ts, ${csvFiles.length} csv files, merge into: ${mergeFile}`);
-    });
+    let mergeFile = path.join(outDir, merge);
+    fs.writeFileSync(mergeFile, MergeTsFiles(csv2tsFromFileList(csvFilePaths, prefix, suffix)));
+    console.log(`csv2ts, ${csvFiles.length} csv files, merge into: ${mergeFile}`);
 }
 else {
     csvFiles.forEach((filename) => {
-        csv2tsFromFile(path.join(dir, filename), prefix, suffix).then(function(result) {
-            let target = path.join(outDir, `${filename}.ts`);
-            fs.writeFileSync(target, result);
-            console.log(`csv2ts, convert: ${filename} , to: ${target}`);
-        });
+        let target = path.join(outDir, `${filename}.ts`);
+        fs.writeFileSync(target, csv2tsFromFile(path.join(dir, filename), prefix, suffix));
+        console.log(`csv2ts, convert: ${filename} , to: ${target}`);
     });
     console.log('csv2ts convert done!');
 }
