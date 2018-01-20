@@ -3,17 +3,23 @@ import * as fs from 'fs';
 import * as d3 from 'd3';
 import * as changeCase from 'change-case';
 import * as ini from 'ini';
+let toml = require('toml');
 
 let packageJson = require('../package.json');
 
 export const Convert = {
     ini: function(str: string, moduleName: string) {
-        let obj = ini.parse(str);
+        let obj = toml.parse(str);
         return `export const ${moduleName} = ${JSON.stringify(obj, null, 4)};`;
     },
 
     csv: function(str: string, moduleName: string) {
         return csv2ts(str, moduleName);
+    },
+
+    toml: function(str: string, moduleName: string) {
+        let obj = toml.parse(str);
+        return `export const ${moduleName} = ${JSON.stringify(obj, null, 4)};`;
     }
 };
 

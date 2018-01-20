@@ -1,7 +1,6 @@
-export const IniFileIni = {
+export const TomlFileToml = {
     "num": 1,
-    "str": "string",
-    "bool": true,
+    "str": "test",
     "ItemType": {
         "book": 1,
         "fruit": 2

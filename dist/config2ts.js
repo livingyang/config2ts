@@ -4,15 +4,19 @@ const path = require("path");
 const fs = require("fs");
 const d3 = require("d3");
 const changeCase = require("change-case");
-const ini = require("ini");
+let toml = require('toml');
 let packageJson = require('../package.json');
 exports.Convert = {
     ini: function (str, moduleName) {
-        let obj = ini.parse(str);
+        let obj = toml.parse(str);
         return `export const ${moduleName} = ${JSON.stringify(obj, null, 4)};`;
     },
     csv: function (str, moduleName) {
         return csv2ts(str, moduleName);
+    },
+    toml: function (str, moduleName) {
+        let obj = toml.parse(str);
+        return `export const ${moduleName} = ${JSON.stringify(obj, null, 4)};`;
     }
 };
 function csv2ts(csvString, moduleName) {

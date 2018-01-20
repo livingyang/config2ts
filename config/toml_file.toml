@@ -1,8 +1,6 @@
 num = 1
 
-str = "string"
-
-bool = true
+str = "test"
 
 [ItemType]
 book = 1
