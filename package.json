@@ -1,13 +1,13 @@
 {
-  "name": "csv2ts",
-  "version": "1.4.0",
-  "description": "convert csv to ts file.",
+  "name": "config2ts",
+  "version": "2.0.0",
+  "description": "convert config to ts file.",
   "main": "index.js",
   "directories": {
     "test": "test"
   },
   "bin": {
-    "csv2ts": "./bin/csv2ts"
+    "config2ts": "./bin/config2ts"
   },
   "scripts": {
     "test": "node_modules/.bin/jest",
@@ -15,20 +15,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/livingyang/csv2ts.git"
+    "url": "git+https://github.com/livingyang/config2ts.git"
   },
   "author": "livingyang",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/livingyang/csv2ts/issues"
+    "url": "https://github.com/livingyang/config2ts/issues"
   },
-  "homepage": "https://github.com/livingyang/csv2ts#readme",
+  "homepage": "https://github.com/livingyang/config2ts#readme",
   "dependencies": {
+    "change-case": "^3.0.1",
     "commander": "^2.9.0",
-    "d3": "^4.12.2"
+    "d3": "^4.12.2",
+    "ini": "^1.3.5"
   },
   "devDependencies": {
     "@types/d3": "^4.12.0",
+    "@types/ini": "^1.3.29",
     "@types/jest": "^22.0.1",
     "@types/node": "^9.3.0",
     "jest": "^22.0.6",

@@ -1,11 +1,11 @@
-# csv2ts
-convert csv to ts file.
+# config2ts
+convert config to ts file.
 
 # install
-run command: `npm install -g csv2ts`
+run command: `npm install -g config2ts`
 
 # how to use
-csv2ts folder contains csv
+config2ts folder contains csv
 
 ## Usage
 ```
