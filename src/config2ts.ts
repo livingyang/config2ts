@@ -64,8 +64,8 @@ function csv2ts(csvString: string, moduleName: string) {
     template += JSON.stringify(result, null, 4).replace(/\n/g, '\n    ');
     template += ';\n\n';
 
-    if (convert['id'] === 'Number') {
-        template += `    export const Map: { [id: number]: Record } = {};\n`;
+    if (convert['id'] === 'String') {
+        template += `    export const Map: { [id: string]: Record } = {};\n`;
         template += `    for (const v of List) { Map[v.id] = v; };\n\n`;
     }
 

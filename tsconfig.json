@@ -5,6 +5,7 @@
         "module": "commonjs",
         "watch": false,
         "sourceMap": false,
+        "allowJs": true,
         "outDir": "./dist"
     },
     "include": [
