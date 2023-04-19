@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GetValidFileList = exports.GetHeaderInfo = exports.GetTsStringFromFileList = exports.GetTsString = exports.Convert = void 0;
 const path = require("path");
 const fs = require("fs");
 const d3 = require("d3");
@@ -53,8 +54,8 @@ function csv2ts(csvString, moduleName) {
     // console.log(prettyFormat(result, op));
     template += JSON.stringify(result, null, 4).replace(/\n/g, '\n    ');
     template += ';\n\n';
-    if (convert['id'] === 'Number') {
-        template += `    export const Map: { [id: number]: Record } = {};\n`;
+    if (convert['id'] === 'String') {
+        template += `    export const Map: { [id: string]: Record } = {};\n`;
         template += `    for (const v of List) { Map[v.id] = v; };\n\n`;
     }
     template += "};";

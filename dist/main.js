@@ -15,17 +15,17 @@ let outDir = program['outDir'] || dir;
 let merge = program['merge'];
 let fileList = fs.readdirSync(dir);
 if (merge) {
-    fileList = config2ts_1.GetValidFileList(fileList).map((filename) => {
+    fileList = (0, config2ts_1.GetValidFileList)(fileList).map((filename) => {
         return path.join(dir, filename);
     });
     let mergeFile = path.join(outDir, merge);
-    fs.writeFileSync(mergeFile, config2ts_1.GetHeaderInfo() + config2ts_1.GetTsStringFromFileList(fileList));
+    fs.writeFileSync(mergeFile, (0, config2ts_1.GetHeaderInfo)() + (0, config2ts_1.GetTsStringFromFileList)(fileList));
     console.log(`config2ts, ${fileList.length} config files, merge into: ${mergeFile}`);
 }
 else {
-    config2ts_1.GetValidFileList(fileList).forEach((filename) => {
+    (0, config2ts_1.GetValidFileList)(fileList).forEach((filename) => {
         let target = path.join(outDir, `${filename}.ts`);
-        fs.writeFileSync(target, config2ts_1.GetTsString(path.join(dir, filename)));
+        fs.writeFileSync(target, (0, config2ts_1.GetTsString)(path.join(dir, filename)));
         console.log(`config2ts, convert: ${filename} , to: ${target}`);
     });
     console.log('config2ts convert done!');
