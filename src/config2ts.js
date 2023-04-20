@@ -5,6 +5,8 @@ var d3 = require("d3");
 var changeCase = require("change-case");
 var toml = require('toml');
 var packageJson = require('../package.json');
+var enumStr = 'Enum';
+
 exports.Convert = {
     ini: function (str, moduleName) {
         var obj = toml.parse(str);
@@ -40,10 +42,37 @@ function csv2ts(csvString, moduleName) {
         return "";
     }
     var template = "export namespace ".concat(moduleName, " {\n\n");
+    // generate enum type
+    for (var field in convert) {
+        if (convert[field] == enumStr) {
+            let enumValues = [];
+            for (const row of result) {
+                let enumValue = row[field];
+                if (!enumValues.includes(enumValue)) {
+                    enumValues.push(enumValue);
+                }
+            }
+
+            enumValues = enumValues.map((value) => {return `"${value}"`});
+            template += `    export type ${field} = ${enumValues.join(' | ')};\n`;
+        }
+    }
+
     // generate interface
     template += "    export interface Record {\n";
     for (var field in convert) {
-        var fieldType = convert[field] !== '' ? convert[field].toLowerCase() : 'string';
+        // var fieldType = convert[field] !== '' ? convert[field].toLowerCase() : 'string';
+        
+        var fieldType = 'string';
+
+        if (convert[field] != '') {
+            if (convert[field] == enumStr) {
+                fieldType = field;
+            } else {
+                var fieldType = convert[field].toLowerCase();
+            }
+        }
+
         template += "        ".concat(field, ": ").concat(fieldType, ";\n");
     }
     template += '    };\n\n';

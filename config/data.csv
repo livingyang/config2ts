@@ -1,5 +1,6 @@
-id,name,bool,num
-String,String,Boolean,Number
-1,"xxx",1,111
-2,"xxx",,222
-3,333,,
+id,name,bool,num,mytype
+String,String,Boolean,Number,Enum
+1,xxx,1,111,type1
+2,xxx,,222,type2
+3,333,,33,
+4,444,0,444,type2
