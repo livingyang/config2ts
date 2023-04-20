@@ -1,34 +1,32 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.GetValidFileList = exports.GetHeaderInfo = exports.GetTsStringFromFileList = exports.GetTsString = exports.Convert = void 0;
-const path = require("path");
-const fs = require("fs");
-const d3 = require("d3");
-const changeCase = require("change-case");
-let toml = require('toml');
-let packageJson = require('../package.json');
+var path = require("path");
+var fs = require("fs");
+var d3 = require("d3");
+var changeCase = require("change-case");
+var toml = require('toml');
+var packageJson = require('../package.json');
 exports.Convert = {
     ini: function (str, moduleName) {
-        let obj = toml.parse(str);
-        return `export const ${moduleName} = ${JSON.stringify(obj, null, 4)};`;
+        var obj = toml.parse(str);
+        return "export const ".concat(moduleName, " = ").concat(JSON.stringify(obj, null, 4), ";");
     },
     csv: function (str, moduleName) {
         return csv2ts(str, moduleName);
     },
     toml: function (str, moduleName) {
-        let obj = toml.parse(str);
-        return `export const ${moduleName} = ${JSON.stringify(obj, null, 4)};`;
+        var obj = toml.parse(str);
+        return "export const ".concat(moduleName, " = ").concat(JSON.stringify(obj, null, 4), ";");
     }
 };
 function csv2ts(csvString, moduleName) {
-    let convert = {};
-    let result = d3.csvParse(csvString, (d, i) => {
+    var convert = {};
+    var result = d3.csvParse(csvString, function (d, i) {
         if (i === 0) {
             convert = d;
             return null;
         }
         else {
-            for (let k in d) {
+            for (var k in d) {
                 if (global[convert[k]] instanceof Function) {
                     d[k] = global[convert[k]](d[k]);
                 }
@@ -41,35 +39,35 @@ function csv2ts(csvString, moduleName) {
     if (result.length <= 0) {
         return "";
     }
-    let template = `export namespace ${moduleName} {\n\n`;
+    var template = "export namespace ".concat(moduleName, " {\n\n");
     // generate interface
-    template += `    export interface Record {\n`;
-    for (let field in convert) {
-        let fieldType = convert[field] !== '' ? convert[field].toLowerCase() : 'string';
-        template += `        ${field}: ${fieldType};\n`;
+    template += "    export interface Record {\n";
+    for (var field in convert) {
+        var fieldType = convert[field] !== '' ? convert[field].toLowerCase() : 'string';
+        template += "        ".concat(field, ": ").concat(fieldType, ";\n");
     }
     template += '    };\n\n';
     // generate table
-    template += `    export const List: Record[] = `;
+    template += "    export const List: Record[] = ";
     // console.log(prettyFormat(result, op));
     template += JSON.stringify(result, null, 4).replace(/\n/g, '\n    ');
     template += ';\n\n';
     if (convert['id'] === 'String') {
-        template += `    export const Map: { [id: string]: Record } = {};\n`;
-        template += `    for (const v of List) { Map[v.id] = v; };\n\n`;
+        template += "    export const Map: { [id: string]: Record } = {};\n";
+        template += "    for (const v of List) { Map[v.id] = v; };\n\n";
     }
     template += "};";
     return template;
 }
 function GetFileExt(filePath) {
-    let pathObject = path.parse(filePath);
+    var pathObject = path.parse(filePath);
     return pathObject.ext.slice(1);
 }
 function GetTsString(filePath) {
-    let pathObject = path.parse(filePath);
-    let handle = exports.Convert[GetFileExt(filePath)];
+    var pathObject = path.parse(filePath);
+    var handle = exports.Convert[GetFileExt(filePath)];
     if (handle) {
-        let moduleName = changeCase.pascalCase(pathObject.base);
+        var moduleName = changeCase.pascalCase(pathObject.base);
         return handle(fs.readFileSync(filePath).toString(), moduleName);
     }
     else {
@@ -78,19 +76,19 @@ function GetTsString(filePath) {
 }
 exports.GetTsString = GetTsString;
 function GetTsStringFromFileList(fileList) {
-    return fileList.map((filePath) => {
+    return fileList.map(function (filePath) {
         return GetTsString(filePath);
     }).join('\n\n');
 }
 exports.GetTsStringFromFileList = GetTsStringFromFileList;
 function GetHeaderInfo() {
-    let header = `export let config2ts_version = "${packageJson.version}";\n\n`;
-    header += `export let config2ts_build_timestamp = ${Date.now()};\n\n`;
+    var header = "export let config2ts_version = \"".concat(packageJson.version, "\";\n\n");
+    header += "export let config2ts_build_timestamp = ".concat(Date.now(), ";\n\n");
     return header;
 }
 exports.GetHeaderInfo = GetHeaderInfo;
 function GetValidFileList(fileList) {
-    return fileList.filter((filePath) => {
+    return fileList.filter(function (filePath) {
         return exports.Convert[GetFileExt(filePath)] != null;
     });
 }

@@ -14,7 +14,7 @@ config2ts folder contains csv
     -h, --help             output usage information
     -V, --version          output the version number
     -d, --dir <path>       set convert path. default: ./
-    -o, --outDir <path>    set outDir path. default: same as dir
+    -o, --outDir <path>    set outDir path. default: ./
     -p, --prefix <prefix>  set interface prefix. default: ""
     -s, --suffix <suffix>  set interface suffix. default: "Csv"
     -m, --merge <name>     merge all to one ts file. default: csv.ts
