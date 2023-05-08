@@ -1,6 +1,6 @@
-id,name,bool,num,mytype
-String,String,Boolean,Number,Enum
-1,xxx,1,111,type1
-2,xxx,,222,type2
-3,333,,33,
-4,444,0,444,type2
+id,name,bool,num,mytype,stringarray,numberarray
+String,String,Boolean,Number,Enum,String[],Number[]
+1,xxx,1,111,type1,"1, 2, 3","1, 2, 3"
+2,xxx,,222,type2,"a,b",
+3,333,,33,,,"1,2"
+4,444,0,444,type2,",1,,b",",1,,3"

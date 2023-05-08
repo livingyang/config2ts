@@ -15,7 +15,7 @@ test('convert toml file', function () {
     expect(config2ts.GetTsString('./config/toml_file.toml')).toBe(fs.readFileSync('./config/toml_file.toml.ts').toString());
 });
 test('config2ts merge csv file list', function () {
-    expect(config2ts.GetTsStringFromFileList(["./config/data.csv", "./config/no-id.csv"])).toBe(fs.readFileSync('./config/total.ts').toString());
+    expect(config2ts.GetTsStringFromFileList(["./config/data.csv", "./config/ini-file.ini", "./config/no-id.csv", "./config/toml_file.toml"])).toBe(fs.readFileSync('./config/total.ts').toString());
 });
 test('config2ts merge csv file list', function () {
     expect(config2ts.GetValidFileList(['a.csv', 'b.ini', 'c.xxx'])).toEqual(['a.csv', 'b.ini']);

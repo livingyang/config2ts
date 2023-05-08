@@ -30,7 +30,7 @@ if (merge) {
         return path.join(dir, filename);
     });
     var mergeFile = path.join(outDir, merge);
-    fs.writeFileSync(mergeFile, config2ts.GetHeaderInfo() + config2ts.GetTsStringFromFileList(fileList));
+    fs.writeFileSync(mergeFile, config2ts.GetTsStringFromFileList(fileList));
     console.log("config2ts, ".concat(fileList.length, " config files, merge into: ").concat(mergeFile));
 }
 else {

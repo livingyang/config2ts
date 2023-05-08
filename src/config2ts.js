@@ -31,6 +31,13 @@ function csv2ts(csvString, moduleName) {
             for (var k in d) {
                 if (global[convert[k]] instanceof Function) {
                     d[k] = global[convert[k]](d[k]);
+                } else {
+                    // console.log(`convert[k]: ${convert[k]}, d[k]: ${d[k]}, k: ${k}`)
+                    if (convert[k] === 'String[]') {
+                        d[k] = d[k].trim().split(',');
+                    } else if (convert[k] === 'Number[]') {
+                        d[k] = d[k].trim().split(',').map((val) => Number(val));
+                    }
                 }
             }
             return d;
