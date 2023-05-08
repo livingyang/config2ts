@@ -30,13 +30,13 @@ if (merge) {
         return path.join(dir, filename);
     });
     var mergeFile = path.join(outDir, merge);
-    fs.writeFileSync(mergeFile, config2ts.GetTsStringFromFileList(fileList));
+    fs.writeFileSync(mergeFile, config2ts.GetTsStringFromFileList(fileList), {encoding: 'utf-8'});
     console.log("config2ts, ".concat(fileList.length, " config files, merge into: ").concat(mergeFile));
 }
 else {
     config2ts.GetValidFileList(fileList).forEach(function (filename) {
         var target = path.join(outDir, "".concat(filename, ".ts"));
-        fs.writeFileSync(target, config2ts.GetTsString(path.join(dir, filename)));
+        fs.writeFileSync(target, config2ts.GetTsString(path.join(dir, filename)), {encoding: 'utf-8'});
         console.log("config2ts, convert: ".concat(filename, " , to: ").concat(target));
     });
     console.log('config2ts convert done!');

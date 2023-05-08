@@ -104,7 +104,9 @@ function GetTsString(filePath) {
     var handle = exports.Convert[GetFileExt(filePath)];
     if (handle) {
         var moduleName = changeCase.pascalCase(pathObject.base);
-        return handle(fs.readFileSync(filePath).toString(), moduleName);
+        var fileString = fs.readFileSync(filePath).toString();
+        if (fileString.charAt(0) === '\uFEFF') fileString = fileString.substr(1);
+        return handle(fileString, moduleName);
     }
     else {
         return '';
