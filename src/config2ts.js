@@ -5,7 +5,8 @@ var d3 = require("d3");
 var changeCase = require("change-case");
 var toml = require('toml');
 var packageJson = require('../package.json');
-var enumStr = 'Enum';
+var EnumStr = 'Enum';
+var IndexStr = 'Index';
 
 exports.Convert = {
     ini: function (str, moduleName) {
@@ -51,7 +52,7 @@ function csv2ts(csvString, moduleName) {
     var template = "export namespace ".concat(moduleName, " {\n\n");
     // generate enum type
     for (var field in convert) {
-        if (convert[field] == enumStr) {
+        if (convert[field] == EnumStr) {
             let enumValues = [];
             for (const row of result) {
                 let enumValue = row[field];
@@ -67,16 +68,19 @@ function csv2ts(csvString, moduleName) {
 
     // generate interface
     template += "    export interface Record {\n";
+    var indexField = null;
     for (var field in convert) {
         // var fieldType = convert[field] !== '' ? convert[field].toLowerCase() : 'string';
         
         var fieldType = 'string';
 
         if (convert[field] != '') {
-            if (convert[field] == enumStr) {
+            if (convert[field] == EnumStr) {
                 fieldType = field;
+            } else if (convert[field] == IndexStr) {
+                indexField = field;
             } else {
-                var fieldType = convert[field].toLowerCase();
+                fieldType = convert[field].toLowerCase();
             }
         }
 
@@ -88,9 +92,9 @@ function csv2ts(csvString, moduleName) {
     // console.log(prettyFormat(result, op));
     template += JSON.stringify(result, null, 4).replace(/\n/g, '\n    ');
     template += ';\n\n';
-    if (convert['id'] === 'String') {
+    if (indexField != null) {
         template += "    export const Map: { [id: string]: Record } = {};\n";
-        template += "    for (const v of List) { Map[v.id] = v; };\n\n";
+        template += `    for (const v of List) { Map[v.${indexField}] = v; };\n\n`;
     }
     template += "};";
     return template;
