@@ -6,6 +6,7 @@ var changeCase = require("change-case");
 var toml = require('toml');
 var packageJson = require('../package.json');
 var EnumStr = 'Enum';
+var EnumArrayString = 'Enum[]';
 var IndexStr = 'Index';
 
 exports.Convert = {
@@ -38,6 +39,8 @@ function csv2ts(csvString, moduleName) {
                         d[k] = d[k].trim().split(',');
                     } else if (convert[k] === 'Number[]') {
                         d[k] = d[k].trim().split(',').map((val) => Number(val));
+                    } else if (convert[k] === 'Enum[]') {
+                        d[k] = d[k].trim().split(',');
                     }
                 }
             }
@@ -63,6 +66,23 @@ function csv2ts(csvString, moduleName) {
 
             enumValues = enumValues.map((value) => {return `"${value}"`});
             template += `    export type ${field} = ${enumValues.join(' | ')};\n`;
+            // general enum list for length test
+            template += `    export const ${field}List: ${field}[] = [${enumValues.join(', ')}];\n\n`;
+        } else if (convert[field] == EnumArrayString) {
+            let enumValues = [];
+            for (const row of result) {
+                let enumArrayValue = row[field];
+                for (const enumValue of enumArrayValue) {
+                    if (!enumValues.includes(enumValue)) {
+                        enumValues.push(enumValue);
+                    }
+                }
+            }
+
+            enumValues = enumValues.map((value) => {return `"${value}"`});
+            template += `    export type ${field} = ${enumValues.join(' | ')};\n`;
+            // general enum list for length test
+            template += `    export const ${field}List: ${field}[] = [${enumValues.join(', ')}];\n\n`;
         }
     }
 
@@ -71,6 +91,7 @@ function csv2ts(csvString, moduleName) {
     var indexField = null;
     for (var field in convert) {
         // var fieldType = convert[field] !== '' ? convert[field].toLowerCase() : 'string';
+        // console.log(`generate interface field: ${field}, convert[field]: ${convert[field]}`);
         
         var fieldType = 'string';
 
@@ -79,6 +100,8 @@ function csv2ts(csvString, moduleName) {
                 fieldType = field;
             } else if (convert[field] == IndexStr) {
                 indexField = field;
+            } else if (convert[field] == EnumArrayString) {
+                fieldType = field + '[]';
             } else {
                 fieldType = convert[field].toLowerCase();
             }

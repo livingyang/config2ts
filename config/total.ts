@@ -1,6 +1,11 @@
 export namespace DataCsv {
 
     export type mytype = "type1" | "type2" | "";
+    export const mytypeList: mytype[] = ["type1", "type2", ""];
+
+    export type typearray = "t1" | "t2" | "t3" | "t4" | "";
+    export const typearrayList: typearray[] = ["t1", "t2", "t3", "t4", ""];
+
     export interface Record {
         id: string;
         name: string;
@@ -9,6 +14,7 @@ export namespace DataCsv {
         mytype: mytype;
         stringarray: string[];
         numberarray: number[];
+        typearray: typearray[];
     };
 
     export const List: Record[] = [
@@ -27,6 +33,9 @@ export namespace DataCsv {
                 1,
                 2,
                 3
+            ],
+            "typearray": [
+                "t1"
             ]
         },
         {
@@ -41,6 +50,10 @@ export namespace DataCsv {
             ],
             "numberarray": [
                 0
+            ],
+            "typearray": [
+                "t1",
+                "t2"
             ]
         },
         {
@@ -55,6 +68,11 @@ export namespace DataCsv {
             "numberarray": [
                 1,
                 2
+            ],
+            "typearray": [
+                "t2",
+                "t3",
+                "t4"
             ]
         },
         {
@@ -74,6 +92,9 @@ export namespace DataCsv {
                 1,
                 0,
                 3
+            ],
+            "typearray": [
+                ""
             ]
         }
     ];

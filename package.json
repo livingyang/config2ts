@@ -1,6 +1,6 @@
 {
   "name": "config2ts",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "description": "convert config to ts file.",
   "main": "index.js",
   "type": "commonjs",
