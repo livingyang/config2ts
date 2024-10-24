@@ -13,14 +13,14 @@ var IndexStr = 'Index';
 exports.Convert = {
     ini: function (str, moduleName) {
         var obj = toml.parse(str);
-        return "export const ".concat(moduleName, " = ").concat(JSON.stringify(obj, null, 4), ";");
+        return "export const ".concat(moduleName, " = ").concat(json5.stringify(obj, null, 4), ";");
     },
     csv: function (str, moduleName) {
         return csv2ts(str, moduleName);
     },
     toml: function (str, moduleName) {
         var obj = toml.parse(str);
-        return "export const ".concat(moduleName, " = ").concat(JSON.stringify(obj, null, 4), ";");
+        return "export const ".concat(moduleName, " = ").concat(json5.stringify(obj, null, 4), ";");
     }
 };
 function csv2ts(csvString, moduleName) {

@@ -103,13 +103,13 @@ export namespace DataCsv {
 };
 
 export const IniFileIni = {
-    "num": 1,
-    "str": "string",
-    "bool": true,
-    "ItemType": {
-        "book": 1,
-        "fruit": 2
-    }
+    num: 1,
+    str: 'string',
+    bool: true,
+    ItemType: {
+        book: 1,
+        fruit: 2,
+    },
 };
 
 export namespace NoIdCsv {
@@ -141,10 +141,10 @@ export namespace NoIdCsv {
 };
 
 export const TomlFileToml = {
-    "num": 1,
-    "str": "test",
-    "ItemType": {
-        "book": 1,
-        "fruit": 2
-    }
+    num: 1,
+    str: 'test',
+    ItemType: {
+        book: 1,
+        fruit: 2,
+    },
 };
