@@ -1,25 +1,34 @@
 # config2ts
+
 convert config to ts file.
 
 # install
+
 run command: `npm install -g config2ts`
 
 # how to use
+
 config2ts -d config -o dist -m csv.ts
 
 # support type
-| csv field   | typescript type |
-| :---------: | :------------:  |
-| Index       | string          |
-| String      | string          |
-| Number      | number          |
-| Boolean     | boolean         |
-| Enum        | type            |
-| String[]    | string[]        |
-| Number[]    | number[]        |
-| Enum[]      | type[]          |
+
+| csv field | typescript type |
+| :-------: | :-------------: |
+|   Index   |     string      |
+|  String   |     string      |
+|  Number   |     number      |
+|  Boolean  |     boolean     |
+|   Enum    |      type       |
+| String[]  |    string[]     |
+| Number[]  |    number[]     |
+|  Enum[]   |     type[]      |
+
+* `Number` support Infinity and NaN
+* `Enum` support empty string type
+* `Enum[]` do not include empty string type
 
 ## Usage
+
 ```
   Options:
 

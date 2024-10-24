@@ -7,10 +7,10 @@ function getTsFileString(tsFilePath) {
 }
 
 test('convert csv file with id', function () {
-    console.log(config2ts.GetTsString('./config/data.csv'))
     expect(config2ts.GetTsString('./config/data.csv').replace(reg, '')).toBe(getTsFileString('./config/data.csv.ts'));
 });
 test('convert csv file without id', function () {
+    // console.log(config2ts.GetTsString('./config/no-id.csv'))
     expect(config2ts.GetTsString('./config/no-id.csv').replace(reg, '')).toBe(getTsFileString('./config/no-id.csv.ts'));
 });
 test('convert ini file', function () {

@@ -2,6 +2,7 @@ exports.GetValidFileList = exports.GetHeaderInfo = exports.GetTsStringFromFileLi
 var path = require("path");
 var fs = require("fs");
 var d3 = require("d3");
+var json5 = require("json5");
 var changeCase = require("change-case");
 var toml = require('toml');
 var packageJson = require('../package.json');
@@ -31,17 +32,22 @@ function csv2ts(csvString, moduleName) {
         }
         else {
             for (var k in d) {
+                // console.log(`convert[k]: ${convert[k]}, d[k]: ${d[k]}, k: ${k}`)
                 if (global[convert[k]] instanceof Function) {
                     d[k] = global[convert[k]](d[k]);
-                } else {
-                    // console.log(`convert[k]: ${convert[k]}, d[k]: ${d[k]}, k: ${k}`)
-                    if (convert[k] === 'String[]') {
-                        d[k] = d[k].trim().split(',');
-                    } else if (convert[k] === 'Number[]') {
-                        d[k] = d[k].trim().split(',').map((val) => Number(val));
-                    } else if (convert[k] === 'Enum[]') {
+                } else if (convert[k] === 'String[]') {
+                    d[k] = d[k].trim().split(',');
+                } else if (convert[k] === 'Number[]') {
+                    d[k] = d[k].trim().split(',').map((val) => Number(val));
+                } else if (convert[k] === 'Enum[]') {
+                    if (d[k] === '') {
+                        // Enum array do not include empty string
+                        d[k] = [];
+                    } else {
                         d[k] = d[k].trim().split(',');
                     }
+                } else {
+                    d[k] = String(d[k]);
                 }
             }
             return d;
@@ -110,10 +116,18 @@ function csv2ts(csvString, moduleName) {
         template += "        ".concat(field, ": ").concat(fieldType, ";\n");
     }
     template += '    };\n\n';
+    
+    // remove object when index is empty
+    if (indexField) {
+        result = result.filter((v) => {
+            return v[indexField] !== '';
+        })
+    }
+
     // generate table
     template += "    export const List: Record[] = ";
     // console.log(prettyFormat(result, op));
-    template += JSON.stringify(result, null, 4).replace(/\n/g, '\n    ');
+    template += json5.stringify(result, null, 4).replace(/\n/g, '\n    ');
     template += ';\n\n';
     if (indexField != null) {
         template += "    export const Map: { [id: string]: Record } = {};\n";

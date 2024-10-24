@@ -8,20 +8,20 @@ export namespace NoIdCsv {
 
     export const List: Record[] = [
         {
-            "name": "xxx",
-            "bool": true,
-            "num": 111
+            name: 'xxx',
+            bool: true,
+            num: 111,
         },
         {
-            "name": "xxx",
-            "bool": false,
-            "num": 222
+            name: 'xxx',
+            bool: false,
+            num: 222,
         },
         {
-            "name": "333",
-            "bool": false,
-            "num": 0
-        }
+            name: '333',
+            bool: false,
+            num: 0,
+        },
     ];
 
 };

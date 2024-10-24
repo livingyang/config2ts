@@ -3,8 +3,8 @@ export namespace DataCsv {
     export type mytype = "type1" | "type2" | "";
     export const mytypeList: mytype[] = ["type1", "type2", ""];
 
-    export type typearray = "t1" | "t2" | "t3" | "t4" | "";
-    export const typearrayList: typearray[] = ["t1", "t2", "t3", "t4", ""];
+    export type typearray = "t1" | "t2" | "t3" | "t4";
+    export const typearrayList: typearray[] = ["t1", "t2", "t3", "t4"];
 
     export interface Record {
         id: string;
@@ -19,84 +19,82 @@ export namespace DataCsv {
 
     export const List: Record[] = [
         {
-            "id": "1",
-            "name": "xxx",
-            "bool": true,
-            "num": 111,
-            "mytype": "type1",
-            "stringarray": [
-                "1",
-                " 2",
-                " 3"
+            id: '1',
+            name: 'xxx',
+            bool: true,
+            num: 111,
+            mytype: 'type1',
+            stringarray: [
+                '1',
+                ' 2',
+                ' 3',
             ],
-            "numberarray": [
+            numberarray: [
                 1,
                 2,
-                3
+                3,
             ],
-            "typearray": [
-                "t1"
-            ]
+            typearray: [
+                't1',
+            ],
         },
         {
-            "id": "2",
-            "name": "xxx",
-            "bool": false,
-            "num": 222,
-            "mytype": "type2",
-            "stringarray": [
-                "a",
-                "b"
+            id: '2',
+            name: 'xxx',
+            bool: false,
+            num: 222,
+            mytype: 'type2',
+            stringarray: [
+                'a',
+                'b',
             ],
-            "numberarray": [
-                0
+            numberarray: [
+                0,
             ],
-            "typearray": [
-                "t1",
-                "t2"
-            ]
+            typearray: [
+                't1',
+                't2',
+            ],
         },
         {
-            "id": "3",
-            "name": "333",
-            "bool": false,
-            "num": 33,
-            "mytype": "",
-            "stringarray": [
-                ""
+            id: '3',
+            name: '333',
+            bool: false,
+            num: NaN,
+            mytype: '',
+            stringarray: [
+                '',
             ],
-            "numberarray": [
+            numberarray: [
                 1,
-                2
+                2,
             ],
-            "typearray": [
-                "t2",
-                "t3",
-                "t4"
-            ]
+            typearray: [
+                't2',
+                't3',
+                't4',
+            ],
         },
         {
-            "id": "4",
-            "name": "444",
-            "bool": true,
-            "num": 444,
-            "mytype": "type2",
-            "stringarray": [
-                "",
-                "1",
-                "",
-                "b"
+            id: '4',
+            name: '444',
+            bool: true,
+            num: Infinity,
+            mytype: 'type2',
+            stringarray: [
+                '',
+                '1',
+                '',
+                'b',
             ],
-            "numberarray": [
+            numberarray: [
                 0,
                 1,
                 0,
-                3
+                3,
             ],
-            "typearray": [
-                ""
-            ]
-        }
+            typearray: [],
+        },
     ];
 
     export const Map: { [id: string]: Record } = {};
@@ -124,20 +122,20 @@ export namespace NoIdCsv {
 
     export const List: Record[] = [
         {
-            "name": "xxx",
-            "bool": true,
-            "num": 111
+            name: 'xxx',
+            bool: true,
+            num: 111,
         },
         {
-            "name": "xxx",
-            "bool": false,
-            "num": 222
+            name: 'xxx',
+            bool: false,
+            num: 222,
         },
         {
-            "name": "333",
-            "bool": false,
-            "num": 0
-        }
+            name: '333',
+            bool: false,
+            num: 0,
+        },
     ];
 
 };

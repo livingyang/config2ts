@@ -1,6 +1,6 @@
 {
   "name": "config2ts",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "convert config to ts file.",
   "main": "index.js",
   "type": "commonjs",
@@ -27,8 +27,9 @@
   "dependencies": {
     "change-case": "^4.1.2",
     "commander": "^9.5.0",
-    "d3": "^4.12.2",
+    "d3": "^7.9.0",
     "ini": "^3.0.1",
+    "json5": "^2.2.3",
     "toml": "^3.0.0"
   },
   "devDependencies": {
