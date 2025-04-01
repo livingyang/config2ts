@@ -98,7 +98,6 @@ function csv2ts(csvString, moduleName) {
     for (var field in convert) {
         // var fieldType = convert[field] !== '' ? convert[field].toLowerCase() : 'string';
         // console.log(`generate interface field: ${field}, convert[field]: ${convert[field]}`);
-        
         var fieldType = 'string';
 
         if (convert[field] != '') {
@@ -113,6 +112,7 @@ function csv2ts(csvString, moduleName) {
             }
         }
 
+        field = serializeField(field)
         template += "        ".concat(field, ": ").concat(fieldType, ";\n");
     }
     template += '    };\n\n';
@@ -136,6 +136,19 @@ function csv2ts(csvString, moduleName) {
     template += "};";
     return template;
 }
+
+/**
+ * serialize interface field
+ * @param {string} field 
+ */
+function serializeField(key) {
+    const obj = {}
+    obj[key] = true
+    const objString = json5.stringify(obj);
+    // console.log('serializeField:', json5.stringify(obj))
+    return objString.includes("'") ? "'" + key + "'" : key;
+}
+
 function GetFileExt(filePath) {
     var pathObject = path.parse(filePath);
     return pathObject.ext.slice(1);

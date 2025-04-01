@@ -15,6 +15,7 @@ export namespace DataCsv {
         stringarray: string[];
         numberarray: number[];
         typearray: typearray[];
+        'space field/sub': string;
     };
 
     export const List: Record[] = [
@@ -37,6 +38,7 @@ export namespace DataCsv {
             typearray: [
                 't1',
             ],
+            'space field/sub': 'a',
         },
         {
             id: '2',
@@ -55,6 +57,7 @@ export namespace DataCsv {
                 't1',
                 't2',
             ],
+            'space field/sub': 'a',
         },
         {
             id: '3',
@@ -74,6 +77,7 @@ export namespace DataCsv {
                 't3',
                 't4',
             ],
+            'space field/sub': 'b',
         },
         {
             id: '4',
@@ -94,6 +98,7 @@ export namespace DataCsv {
                 3,
             ],
             typearray: [],
+            'space field/sub': 'c',
         },
     ];
 

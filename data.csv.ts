@@ -15,7 +15,7 @@ export namespace DataCsv {
         stringarray: string[];
         numberarray: number[];
         typearray: typearray[];
-        'space field/sub': string;
+        space field/sub: string;
     };
 
     export const List: Record[] = [
@@ -105,51 +105,4 @@ export namespace DataCsv {
     export const Map: { [id: string]: Record } = {};
     for (const v of List) { Map[v.id] = v; };
 
-};
-
-export const IniFileIni = {
-    num: 1,
-    str: 'string',
-    bool: true,
-    ItemType: {
-        book: 1,
-        fruit: 2,
-    },
-};
-
-export namespace NoIdCsv {
-
-    export interface Record {
-        name: string;
-        bool: boolean;
-        num: number;
-    };
-
-    export const List: Record[] = [
-        {
-            name: 'xxx',
-            bool: true,
-            num: 111,
-        },
-        {
-            name: 'xxx',
-            bool: false,
-            num: 222,
-        },
-        {
-            name: '333',
-            bool: false,
-            num: 0,
-        },
-    ];
-
-};
-
-export const TomlFileToml = {
-    num: 1,
-    str: 'test',
-    ItemType: {
-        book: 1,
-        fruit: 2,
-    },
 };
