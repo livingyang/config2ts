@@ -27,8 +27,8 @@ export namespace DataCsv {
             mytype: 'type1',
             stringarray: [
                 '1',
-                ' 2',
-                ' 3',
+                '2',
+                '3',
             ],
             numberarray: [
                 1,
@@ -65,9 +65,7 @@ export namespace DataCsv {
             bool: false,
             num: NaN,
             mytype: '',
-            stringarray: [
-                '',
-            ],
+            stringarray: [],
             numberarray: [
                 1,
                 2,

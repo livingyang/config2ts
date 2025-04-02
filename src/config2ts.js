@@ -36,7 +36,12 @@ function csv2ts(csvString, moduleName) {
                 if (global[convert[k]] instanceof Function) {
                     d[k] = global[convert[k]](d[k]);
                 } else if (convert[k] === 'String[]') {
-                    d[k] = d[k].trim().split(',');
+                    if (d[k] === '') {
+                        // Enum array do not include empty string
+                        d[k] = [];
+                    } else {
+                        d[k] = d[k].trim().split(',').map((v) => v.trim());
+                    }
                 } else if (convert[k] === 'Number[]') {
                     d[k] = d[k].trim().split(',').map((val) => Number(val));
                 } else if (convert[k] === 'Enum[]') {
@@ -44,7 +49,7 @@ function csv2ts(csvString, moduleName) {
                         // Enum array do not include empty string
                         d[k] = [];
                     } else {
-                        d[k] = d[k].trim().split(',');
+                        d[k] = d[k].trim().split(',').map((v) => v.trim());
                     }
                 } else {
                     d[k] = String(d[k]);
