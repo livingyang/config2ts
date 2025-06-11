@@ -7,6 +7,7 @@ var changeCase = require("change-case");
 var toml = require('toml');
 var packageJson = require('../package.json');
 var EnumStr = 'Enum';
+var EnumIndexStr = 'EnumIndex';
 var EnumArrayString = 'Enum[]';
 var IndexStr = 'Index';
 
@@ -66,7 +67,7 @@ function csv2ts(csvString, moduleName) {
     var template = "export namespace ".concat(moduleName, " {\n\n");
     // generate enum type
     for (var field in convert) {
-        if (convert[field] == EnumStr) {
+        if (convert[field] == EnumStr || convert[field] == EnumIndexStr) {
             let enumValues = [];
             for (const row of result) {
                 let enumValue = row[field];
@@ -108,6 +109,9 @@ function csv2ts(csvString, moduleName) {
         if (convert[field] != '') {
             if (convert[field] == EnumStr) {
                 fieldType = field;
+            } else if (convert[field] == EnumIndexStr) {
+                fieldType = field;
+                indexField = field;
             } else if (convert[field] == IndexStr) {
                 indexField = field;
             } else if (convert[field] == EnumArrayString) {

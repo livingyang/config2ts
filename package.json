@@ -1,6 +1,6 @@
 {
   "name": "config2ts",
-  "version": "2.2.8",
+  "version": "2.2.9",
   "description": "convert config to ts file.",
   "main": "index.js",
   "type": "commonjs",
@@ -11,6 +11,7 @@
     "config2ts": "./bin/config2ts"
   },
   "scripts": {
+    "convert": "node ./bin/config2ts -d ./config -o ./config",
     "test": "jest",
     "watch-test": "node_modules/.bin/jest --watch"
   },

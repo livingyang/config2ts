@@ -19,6 +19,7 @@ config2ts -d config -o dist -m csv.ts
 |  Number   |     number      |
 |  Boolean  |     boolean     |
 |   Enum    |      type       |
+| EnumIndex |      type       |
 | String[]  |    string[]     |
 | Number[]  |    number[]     |
 |  Enum[]   |     type[]      |
@@ -26,6 +27,7 @@ config2ts -d config -o dist -m csv.ts
 * `Number` support Infinity and NaN
 * `Enum` support empty string type
 * `Enum[]` do not include empty string type
+* `EnumIndex` will generate index type, and will use `Enum` type to generate interface
 
 ## Usage
 
