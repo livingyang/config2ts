@@ -4,10 +4,10 @@ import {csvParse} from "d3-dsv";
 import * as json5 from "json5";
 import * as changeCase from "change-case";
 import * as toml from 'toml';
-var EnumStr = 'Enum';
-var EnumIndexStr = 'EnumIndex';
-var EnumArrayString = 'Enum[]';
-var IndexStr = 'Index';
+const EnumStr = 'Enum';
+const EnumIndexStr = 'EnumIndex';
+const EnumArrayString = 'Enum[]';
+const IndexStr = 'Index';
 
 export const Convert = {
     ini: function (str, moduleName) {
@@ -189,17 +189,17 @@ export function GetValidFileList(fileList) {
 export function startConvert(dir: string, outDir: string, merge: string | null) {
     var fileList = fs.readdirSync(dir);
     if (merge) {
-        fileList = config2ts.GetValidFileList(fileList).map(function (filename) {
+        fileList = GetValidFileList(fileList).map(function (filename) {
             return path.join(dir, filename);
         });
         var mergeFile = path.join(outDir, merge);
-        fs.writeFileSync(mergeFile, config2ts.GetTsStringFromFileList(fileList), {encoding: 'utf-8'});
+        fs.writeFileSync(mergeFile, GetTsStringFromFileList(fileList), {encoding: 'utf-8'});
         console.log(`config2ts, ${fileList.length} config files, merge into: ${mergeFile}`);
     }
     else {
-        config2ts.GetValidFileList(fileList).forEach(function (filename) {
+        GetValidFileList(fileList).forEach(function (filename) {
             var target = path.join(outDir, "".concat(filename, ".ts"));
-            fs.writeFileSync(target, config2ts.GetTsString(path.join(dir, filename)), {encoding: 'utf-8'});
+            fs.writeFileSync(target, GetTsString(path.join(dir, filename)), {encoding: 'utf-8'});
             console.log("config2ts, convert: ".concat(filename, " , to: ").concat(target));
         });
         console.log('config2ts convert done!');
