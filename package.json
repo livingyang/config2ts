@@ -1,6 +1,6 @@
 {
   "name": "config2ts",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "convert config to ts file.",
   "main": "lib/config2ts.js",
   "types": "lib/config2ts.d.ts",
@@ -30,7 +30,7 @@
   "dependencies": {
     "change-case": "^4.1.2",
     "commander": "^9.5.0",
-    "d3": "^4.12.2",
+    "d3-dsv": "^3.0.1",
     "ini": "^3.0.1",
     "json5": "^2.2.3",
     "toml": "^3.0.0"

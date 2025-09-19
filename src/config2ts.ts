@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import * as d3 from "d3";
+import {csvParse} from "d3-dsv";
 import * as json5 from "json5";
 import * as changeCase from "change-case";
 import * as toml from 'toml';
@@ -24,7 +24,7 @@ export const Convert = {
 };
 function csv2ts(csvString, moduleName) {
     var convert = {};
-    var result = d3.csvParse(csvString, function (d, i) {
+    var result = csvParse(csvString, function (d, i) {
         if (i === 0) {
             convert = d;
             return null;

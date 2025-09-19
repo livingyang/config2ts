@@ -5,4 +5,7 @@ module.exports = {
   transform: {
     "^.+\.tsx?$": ["ts-jest", {}],
   },
+  moduleNameMapper: {
+    '^d3-dsv$': '<rootDir>/node_modules/d3-dsv/dist/d3-dsv.min.js',
+  },
 };
