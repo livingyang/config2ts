@@ -1,12 +1,9 @@
 {
   "name": "config2ts",
-  "version": "2.2.9",
+  "version": "2.3.0",
   "description": "convert config to ts file.",
-  "main": "index.js",
-  "type": "commonjs",
-  "directories": {
-    "test": "test"
-  },
+  "main": "lib/config2ts.js",
+  "types": "lib/config2ts.d.ts",
   "bin": {
     "config2ts": "./bin/config2ts"
   },

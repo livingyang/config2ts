@@ -1,4 +1,3 @@
-exports.GetValidFileList = exports.GetHeaderInfo = exports.GetTsStringFromFileList = exports.GetTsString = exports.Convert = void 0;
 var path = require("path");
 var fs = require("fs");
 var d3 = require("d3");
@@ -11,7 +10,7 @@ var EnumIndexStr = 'EnumIndex';
 var EnumArrayString = 'Enum[]';
 var IndexStr = 'Index';
 
-exports.Convert = {
+export const Convert = {
     ini: function (str, moduleName) {
         var obj = toml.parse(str);
         return "export const ".concat(moduleName, " = ").concat(json5.stringify(obj, null, 4), ";");
@@ -162,9 +161,9 @@ function GetFileExt(filePath) {
     var pathObject = path.parse(filePath);
     return pathObject.ext.slice(1);
 }
-function GetTsString(filePath) {
+export function GetTsString(filePath) {
     var pathObject = path.parse(filePath);
-    var handle = exports.Convert[GetFileExt(filePath)];
+    var handle = Convert[GetFileExt(filePath)];
     if (handle) {
         var moduleName = changeCase.pascalCase(pathObject.base);
         var fileString = fs.readFileSync(filePath).toString();
@@ -175,22 +174,41 @@ function GetTsString(filePath) {
         return '';
     }
 }
-exports.GetTsString = GetTsString;
-function GetTsStringFromFileList(fileList) {
+
+export function GetTsStringFromFileList(fileList) {
     return fileList.map(function (filePath) {
         return GetTsString(filePath);
     }).join('\n\n');
 }
-exports.GetTsStringFromFileList = GetTsStringFromFileList;
-function GetHeaderInfo() {
+
+export function GetHeaderInfo() {
     var header = "export let config2ts_version = \"".concat(packageJson.version, "\";\n\n");
     header += "export let config2ts_build_timestamp = ".concat(Date.now().toString(), ";\n\n");
     return header;
 }
-exports.GetHeaderInfo = GetHeaderInfo;
-function GetValidFileList(fileList) {
+
+export function GetValidFileList(fileList) {
     return fileList.filter(function (filePath) {
-        return exports.Convert[GetFileExt(filePath)] != null;
+        return Convert[GetFileExt(filePath)] != null;
     });
 }
-exports.GetValidFileList = GetValidFileList;
+
+export function startConvert(dir: string, outDir: string, merge: boolean) {
+    var fileList = fs.readdirSync(dir);
+    if (merge) {
+        fileList = config2ts.GetValidFileList(fileList).map(function (filename) {
+            return path.join(dir, filename);
+        });
+        var mergeFile = path.join(outDir, merge);
+        fs.writeFileSync(mergeFile, config2ts.GetTsStringFromFileList(fileList), {encoding: 'utf-8'});
+        console.log("config2ts, ".concat(fileList.length, " config files, merge into: ").concat(mergeFile));
+    }
+    else {
+        config2ts.GetValidFileList(fileList).forEach(function (filename) {
+            var target = path.join(outDir, "".concat(filename, ".ts"));
+            fs.writeFileSync(target, config2ts.GetTsString(path.join(dir, filename)), {encoding: 'utf-8'});
+            console.log("config2ts, convert: ".concat(filename, " , to: ").concat(target));
+        });
+        console.log('config2ts convert done!');
+    }
+}
