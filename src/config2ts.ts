@@ -1,10 +1,9 @@
-var path = require("path");
-var fs = require("fs");
-var d3 = require("d3");
-var json5 = require("json5");
-var changeCase = require("change-case");
-var toml = require('toml');
-var packageJson = require('../package.json');
+import * as path from "path";
+import * as fs from "fs";
+import * as d3 from "d3";
+import * as json5 from "json5";
+import * as changeCase from "change-case";
+import * as toml from 'toml';
 var EnumStr = 'Enum';
 var EnumIndexStr = 'EnumIndex';
 var EnumArrayString = 'Enum[]';
@@ -181,19 +180,13 @@ export function GetTsStringFromFileList(fileList) {
     }).join('\n\n');
 }
 
-export function GetHeaderInfo() {
-    var header = "export let config2ts_version = \"".concat(packageJson.version, "\";\n\n");
-    header += "export let config2ts_build_timestamp = ".concat(Date.now().toString(), ";\n\n");
-    return header;
-}
-
 export function GetValidFileList(fileList) {
     return fileList.filter(function (filePath) {
         return Convert[GetFileExt(filePath)] != null;
     });
 }
 
-export function startConvert(dir: string, outDir: string, merge: boolean) {
+export function startConvert(dir: string, outDir: string, merge: string | null) {
     var fileList = fs.readdirSync(dir);
     if (merge) {
         fileList = config2ts.GetValidFileList(fileList).map(function (filename) {
@@ -201,7 +194,7 @@ export function startConvert(dir: string, outDir: string, merge: boolean) {
         });
         var mergeFile = path.join(outDir, merge);
         fs.writeFileSync(mergeFile, config2ts.GetTsStringFromFileList(fileList), {encoding: 'utf-8'});
-        console.log("config2ts, ".concat(fileList.length, " config files, merge into: ").concat(mergeFile));
+        console.log(`config2ts, ${fileList.length} config files, merge into: ${mergeFile}`);
     }
     else {
         config2ts.GetValidFileList(fileList).forEach(function (filename) {

@@ -5,6 +5,5 @@ export declare const Convert: {
 };
 export declare function GetTsString(filePath: any): any;
 export declare function GetTsStringFromFileList(fileList: any): any;
-export declare function GetHeaderInfo(): string;
 export declare function GetValidFileList(fileList: any): any;
-export declare function startConvert(dir: string, outDir: string, merge: boolean): void;
+export declare function startConvert(dir: string, outDir: string, merge: string | null): void;
