@@ -1,11 +1,16 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2019",
     "module": "commonjs",
     "declaration": true,
     "outDir": "./lib",
+    "rootDir": "./src",
     "strict": false,
-    "lib": ["es6"]
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "typeRoots": ["node_modules/@types"],
+    "types": ["node"],
+    "lib": ["es2019"]
   },
   "include": ["src"],
   "exclude": ["node_modules", "**/__tests__/*"]

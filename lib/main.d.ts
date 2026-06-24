@@ -1,9 +1,1 @@
-declare var fs: any;
-declare var path: any;
-declare var program: any;
-declare var config2ts: any;
-declare const options: any;
-declare var dir: any;
-declare var outDir: any;
-declare var merge: any;
-declare var fileList: any;
+export {};

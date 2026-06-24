@@ -1,29 +1,34 @@
-var fs = require("fs");
-var path = require("path");
-var program = require("commander");
-var config2ts = require("./config2ts");
-program.version(require(path.join(__dirname, '..', 'package.json'))['version']);
+import * as fs from "fs";
+import * as path from "path";
+import { Command } from "commander";
+import { startConvert } from "./config2ts";
+
+const pkgPath = path.join(__dirname, "..", "package.json");
+const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+
+const program = new Command();
+
 program
-    .option('-d, --dir <path>', 'set convert path. default: ./')
-    .option('-o, --outDir <path>', 'set outDir path. default: ./')
-    .option('-m, --merge <name>', 'merge all to one ts file.')
-    .parse(process.argv);
+  .version(pkg.version)
+  .option("-d, --dir <path>", "set convert path. default: ./")
+  .option("-o, --outDir <path>", "set outDir path. default: ./")
+  .option("-m, --merge <name>", "merge all to one ts file.")
+  .parse(process.argv);
 
 const options = program.opts();
 console.log(options);
 
-var dir = options['dir'] || '.';
+let dir: string = options.dir || ".";
 dir = path.resolve(dir);
-console.log('dir:', dir);
+console.log("dir:", dir);
 
-var outDir = options['outDir'] || dir;
+let outDir: string = options.outDir || dir;
 outDir = path.resolve(outDir);
-console.log('outDir:', outDir);
+console.log("outDir:", outDir);
 if (!fs.existsSync(outDir)) {
-    fs.mkdirSync(outDir, {recursive: true});
+  fs.mkdirSync(outDir, { recursive: true });
 }
 
-var merge = options['merge'];
-var fileList = fs.readdirSync(dir);
+const merge: string | undefined = options.merge;
 
-config2ts.startConvert(dir, outDir, merge);
+startConvert(dir, outDir, merge || null);

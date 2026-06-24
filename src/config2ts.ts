@@ -1,207 +1,200 @@
 import * as path from "path";
 import * as fs from "fs";
-import {csvParse} from "d3-dsv";
+import { csvParse } from "d3-dsv";
 import * as json5 from "json5";
 import * as changeCase from "change-case";
-import * as toml from 'toml';
-const EnumStr = 'Enum';
-const EnumIndexStr = 'EnumIndex';
-const EnumArrayString = 'Enum[]';
-const IndexStr = 'Index';
+import * as toml from "toml";
 
-export const Convert = {
-    ini: function (str, moduleName) {
-        var obj = toml.parse(str);
-        return "export const ".concat(moduleName, " = ").concat(json5.stringify(obj, null, 4), ";");
-    },
-    csv: function (str, moduleName) {
-        return csv2ts(str, moduleName);
-    },
-    toml: function (str, moduleName) {
-        var obj = toml.parse(str);
-        return "export const ".concat(moduleName, " = ").concat(json5.stringify(obj, null, 4), ";");
-    }
+const EnumStr = "Enum";
+const EnumIndexStr = "EnumIndex";
+const EnumArrayString = "Enum[]";
+const IndexStr = "Index";
+
+type ConvertHandler = (str: string, moduleName: string) => string;
+
+export const Convert: Record<string, ConvertHandler> = {
+  ini: function (str: string, moduleName: string): string {
+    const obj = toml.parse(str);
+    return `export const ${moduleName} = ${json5.stringify(obj, null, 4)};`;
+  },
+  csv: function (str: string, moduleName: string): string {
+    return csv2ts(str, moduleName);
+  },
+  toml: function (str: string, moduleName: string): string {
+    const obj = toml.parse(str);
+    return `export const ${moduleName} = ${json5.stringify(obj, null, 4)};`;
+  },
 };
-function csv2ts(csvString, moduleName) {
-    var convert = {};
-    var result = csvParse(csvString, function (d, i) {
-        if (i === 0) {
-            convert = d;
-            return null;
+
+function csv2ts(csvString: string, moduleName: string): string {
+  let convert: Record<string, string> = {};
+  const result = csvParse(csvString, function (d: Record<string, string>, i: number) {
+    if (i === 0) {
+      convert = d as Record<string, string>;
+      return null;
+    } else {
+      for (const k in d) {
+        if (typeof (global as any)[convert[k]] === "function") {
+          d[k] = (global as any)[convert[k]](d[k]);
+        } else if (convert[k] === "String[]") {
+          if (d[k] === "") {
+            d[k] = [] as any;
+          } else {
+            d[k] = d[k].trim().split(",").map((v) => v.trim()) as any;
+          }
+        } else if (convert[k] === "Number[]") {
+          d[k] = d[k].trim().split(",").map((val) => Number(val)) as any;
+        } else if (convert[k] === "Enum[]") {
+          if (d[k] === "") {
+            d[k] = [] as any;
+          } else {
+            d[k] = d[k].trim().split(",").map((v) => v.trim()) as any;
+          }
+        } else {
+          d[k] = String(d[k]);
         }
-        else {
-            for (var k in d) {
-                // console.log(`convert[k]: ${convert[k]}, d[k]: ${d[k]}, k: ${k}`)
-                if (global[convert[k]] instanceof Function) {
-                    d[k] = global[convert[k]](d[k]);
-                } else if (convert[k] === 'String[]') {
-                    if (d[k] === '') {
-                        // Enum array do not include empty string
-                        d[k] = [];
-                    } else {
-                        d[k] = d[k].trim().split(',').map((v) => v.trim());
-                    }
-                } else if (convert[k] === 'Number[]') {
-                    d[k] = d[k].trim().split(',').map((val) => Number(val));
-                } else if (convert[k] === 'Enum[]') {
-                    if (d[k] === '') {
-                        // Enum array do not include empty string
-                        d[k] = [];
-                    } else {
-                        d[k] = d[k].trim().split(',').map((v) => v.trim());
-                    }
-                } else {
-                    d[k] = String(d[k]);
-                }
-            }
-            return d;
+      }
+      return d;
+    }
+  }) as any[];
+
+  delete (result as any).columns;
+  if (result.length <= 0) {
+    return "";
+  }
+
+  let template = `export namespace ${moduleName} {\n\n`;
+
+  for (const field in convert) {
+    if (convert[field] == EnumStr || convert[field] == EnumIndexStr) {
+      const enumValues: string[] = [];
+      for (const row of result) {
+        const enumValue = row[field];
+        if (!enumValues.includes(enumValue)) {
+          enumValues.push(enumValue);
         }
+      }
+
+      const enumValueStrings = enumValues.map((value) => `"${value}"`);
+      template += `    export type ${field} = ${enumValueStrings.join(" | ")};\n`;
+      template += `    export const ${field}List: ${field}[] = [${enumValueStrings.join(", ")}];\n\n`;
+    } else if (convert[field] == EnumArrayString) {
+      const enumValues: string[] = [];
+      for (const row of result) {
+        const enumArrayValue = row[field];
+        for (const enumValue of enumArrayValue) {
+          if (!enumValues.includes(enumValue)) {
+            enumValues.push(enumValue);
+          }
+        }
+      }
+
+      const enumValueStrings = enumValues.map((value) => `"${value}"`);
+      template += `    export type ${field} = ${enumValueStrings.join(" | ")};\n`;
+      template += `    export const ${field}List: ${field}[] = [${enumValueStrings.join(", ")}];\n\n`;
+    }
+  }
+
+  template += "    export interface Record {\n";
+  let indexField: string | null = null;
+  for (const field in convert) {
+    let fieldType = "string";
+
+    if (convert[field] != "") {
+      if (convert[field] == EnumStr) {
+        fieldType = field;
+      } else if (convert[field] == EnumIndexStr) {
+        fieldType = field;
+        indexField = field;
+      } else if (convert[field] == IndexStr) {
+        indexField = field;
+      } else if (convert[field] == EnumArrayString) {
+        fieldType = field + "[]";
+      } else {
+        fieldType = convert[field].toLowerCase();
+      }
+    }
+
+    const serializedField = serializeField(field);
+    template += `        ${serializedField}: ${fieldType};\n`;
+  }
+  template += "    };\n\n";
+
+  if (indexField) {
+    const filteredResult = result.filter((v) => {
+      return v[indexField] !== "";
     });
-    // 删除columns属性
-    delete result.columns;
-    if (result.length <= 0) {
-        return "";
+    for (let i = 0; i < filteredResult.length; i++) {
+      result[i] = filteredResult[i];
     }
-    var template = "export namespace ".concat(moduleName, " {\n\n");
-    // generate enum type
-    for (var field in convert) {
-        if (convert[field] == EnumStr || convert[field] == EnumIndexStr) {
-            let enumValues: any[] = [];
-            for (const row of result) {
-                let enumValue = row[field];
-                if (!enumValues.includes(enumValue)) {
-                    enumValues.push(enumValue);
-                }
-            }
+    result.length = filteredResult.length;
+  }
 
-            enumValues = enumValues.map((value) => {return `"${value}"`});
-            template += `    export type ${field} = ${enumValues.join(' | ')};\n`;
-            // general enum list for length test
-            template += `    export const ${field}List: ${field}[] = [${enumValues.join(', ')}];\n\n`;
-        } else if (convert[field] == EnumArrayString) {
-            let enumValues: any = [];
-            for (const row of result) {
-                let enumArrayValue = row[field];
-                for (const enumValue of enumArrayValue) {
-                    if (!enumValues.includes(enumValue)) {
-                        enumValues.push(enumValue);
-                    }
-                }
-            }
-
-            enumValues = enumValues.map((value) => {return `"${value}"`});
-            template += `    export type ${field} = ${enumValues.join(' | ')};\n`;
-            // general enum list for length test
-            template += `    export const ${field}List: ${field}[] = [${enumValues.join(', ')}];\n\n`;
-        }
-    }
-
-    // generate interface
-    template += "    export interface Record {\n";
-    var indexField: string | null = null;
-    for (var field in convert) {
-        // var fieldType = convert[field] !== '' ? convert[field].toLowerCase() : 'string';
-        // console.log(`generate interface field: ${field}, convert[field]: ${convert[field]}`);
-        var fieldType = 'string';
-
-        if (convert[field] != '') {
-            if (convert[field] == EnumStr) {
-                fieldType = field;
-            } else if (convert[field] == EnumIndexStr) {
-                fieldType = field;
-                indexField = field;
-            } else if (convert[field] == IndexStr) {
-                indexField = field;
-            } else if (convert[field] == EnumArrayString) {
-                fieldType = field + '[]';
-            } else {
-                fieldType = convert[field].toLowerCase();
-            }
-        }
-
-        field = serializeField(field)
-        template += "        ".concat(field, ": ").concat(fieldType, ";\n");
-    }
-    template += '    };\n\n';
-    
-    // remove object when index is empty
-    if (indexField) {
-        result = result.filter((v) => {
-            return v[indexField] !== '';
-        })
-    }
-
-    // generate table
-    template += "    export const List: Record[] = ";
-    // console.log(prettyFormat(result, op));
-    template += json5.stringify(result, null, 4).replace(/\n/g, '\n    ');
-    template += ';\n\n';
-    if (indexField != null) {
-        template += "    export const Map: { [id: string]: Record } = {};\n";
-        template += `    for (const v of List) { Map[v.${indexField}] = v; };\n\n`;
-    }
-    template += "};";
-    return template;
+  template += "    export const List: Record[] = ";
+  template += json5.stringify(result, null, 4).replace(/\n/g, "\n    ");
+  template += ";\n\n";
+  if (indexField != null) {
+    template += "    export const Map: { [id: string]: Record } = {};\n";
+    template += `    for (const v of List) { Map[v.${indexField}] = v; };\n\n`;
+  }
+  template += "};";
+  return template;
 }
 
-/**
- * serialize interface field
- * @param {string} field 
- */
-function serializeField(key) {
-    const obj = {}
-    obj[key] = true
-    const objString = json5.stringify(obj);
-    // console.log('serializeField:', json5.stringify(obj))
-    return objString.includes("'") ? "'" + key + "'" : key;
+function serializeField(key: string): string {
+  const obj: Record<string, boolean> = {};
+  obj[key] = true;
+  const objString = json5.stringify(obj);
+  return objString.includes("'") ? "'" + key + "'" : key;
 }
 
-function GetFileExt(filePath) {
-    var pathObject = path.parse(filePath);
-    return pathObject.ext.slice(1);
-}
-export function GetTsString(filePath) {
-    var pathObject = path.parse(filePath);
-    var handle = Convert[GetFileExt(filePath)];
-    if (handle) {
-        var moduleName = changeCase.pascalCase(pathObject.base);
-        var fileString = fs.readFileSync(filePath).toString();
-        if (fileString.charAt(0) === '\uFEFF') fileString = fileString.substr(1);
-        return handle(fileString, moduleName);
-    }
-    else {
-        return '';
-    }
+function GetFileExt(filePath: string): string {
+  const pathObject = path.parse(filePath);
+  return pathObject.ext.slice(1);
 }
 
-export function GetTsStringFromFileList(fileList) {
-    return fileList.map(function (filePath) {
-        return GetTsString(filePath);
-    }).join('\n\n');
+export function GetTsString(filePath: string): string {
+  const pathObject = path.parse(filePath);
+  const handle = Convert[GetFileExt(filePath)];
+  if (handle) {
+    const moduleName = changeCase.pascalCase(pathObject.base);
+    let fileString = fs.readFileSync(filePath).toString();
+    if (fileString.charAt(0) === "\uFEFF") fileString = fileString.substr(1);
+    return handle(fileString, moduleName);
+  } else {
+    return "";
+  }
 }
 
-export function GetValidFileList(fileList) {
-    return fileList.filter(function (filePath) {
-        return Convert[GetFileExt(filePath)] != null;
+export function GetTsStringFromFileList(fileList: string[]): string {
+  return fileList
+    .map(function (filePath: string) {
+      return GetTsString(filePath);
+    })
+    .join("\n\n");
+}
+
+export function GetValidFileList(fileList: string[]): string[] {
+  return fileList.filter(function (filePath: string) {
+    return Convert[GetFileExt(filePath)] != null;
+  });
+}
+
+export function startConvert(dir: string, outDir: string, merge: string | null): void {
+  const fileList = fs.readdirSync(dir);
+  if (merge) {
+    const fullFileList = GetValidFileList(fileList).map(function (filename: string) {
+      return path.join(dir, filename);
     });
-}
-
-export function startConvert(dir: string, outDir: string, merge: string | null) {
-    var fileList = fs.readdirSync(dir);
-    if (merge) {
-        fileList = GetValidFileList(fileList).map(function (filename) {
-            return path.join(dir, filename);
-        });
-        var mergeFile = path.join(outDir, merge);
-        fs.writeFileSync(mergeFile, GetTsStringFromFileList(fileList), {encoding: 'utf-8'});
-        console.log(`config2ts, ${fileList.length} config files, merge into: ${mergeFile}`);
-    }
-    else {
-        GetValidFileList(fileList).forEach(function (filename) {
-            var target = path.join(outDir, "".concat(filename, ".ts"));
-            fs.writeFileSync(target, GetTsString(path.join(dir, filename)), {encoding: 'utf-8'});
-            console.log("config2ts, convert: ".concat(filename, " , to: ").concat(target));
-        });
-        console.log('config2ts convert done!');
-    }
+    const mergeFile = path.join(outDir, merge);
+    fs.writeFileSync(mergeFile, GetTsStringFromFileList(fullFileList), { encoding: "utf-8" });
+    console.log(`config2ts, ${fullFileList.length} config files, merge into: ${mergeFile}`);
+  } else {
+    GetValidFileList(fileList).forEach(function (filename: string) {
+      const target = path.join(outDir, `${filename}.ts`);
+      fs.writeFileSync(target, GetTsString(path.join(dir, filename)), { encoding: "utf-8" });
+      console.log(`config2ts, convert: ${filename} , to: ${target}`);
+    });
+    console.log("config2ts convert done!");
+  }
 }
