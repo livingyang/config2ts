@@ -180,21 +180,12 @@ export function GetValidFileList(fileList: string[]): string[] {
   });
 }
 
-export function startConvert(dir: string, outDir: string, merge: string | null): void {
+export function startConvert(dir: string, outDir: string, merge: string): void {
   const fileList = fs.readdirSync(dir);
-  if (merge) {
-    const fullFileList = GetValidFileList(fileList).map(function (filename: string) {
-      return path.join(dir, filename);
-    });
-    const mergeFile = path.join(outDir, merge);
-    fs.writeFileSync(mergeFile, GetTsStringFromFileList(fullFileList), { encoding: "utf-8" });
-    console.log(`config2ts, ${fullFileList.length} config files, merge into: ${mergeFile}`);
-  } else {
-    GetValidFileList(fileList).forEach(function (filename: string) {
-      const target = path.join(outDir, `${filename}.ts`);
-      fs.writeFileSync(target, GetTsString(path.join(dir, filename)), { encoding: "utf-8" });
-      console.log(`config2ts, convert: ${filename} , to: ${target}`);
-    });
-    console.log("config2ts convert done!");
-  }
+  const fullFileList = GetValidFileList(fileList).map(function (filename: string) {
+    return path.join(dir, filename);
+  });
+  const mergeFile = path.join(outDir, merge);
+  fs.writeFileSync(mergeFile, GetTsStringFromFileList(fullFileList), { encoding: "utf-8" });
+  console.log(`config2ts, ${fullFileList.length} config files, merge into: ${mergeFile}`);
 }

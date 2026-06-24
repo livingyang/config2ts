@@ -10,9 +10,9 @@ const program = new Command();
 
 program
   .version(pkg.version)
+  .option("-n, --name <name>", "output file name", "csv.ts")
   .option("-d, --dir <path>", "set convert path. default: ./")
   .option("-o, --outDir <path>", "set outDir path. default: ./")
-  .option("-m, --merge <name>", "merge all to one ts file.")
   .parse(process.argv);
 
 const options = program.opts();
@@ -29,6 +29,4 @@ if (!fs.existsSync(outDir)) {
   fs.mkdirSync(outDir, { recursive: true });
 }
 
-const merge: string | undefined = options.merge;
-
-startConvert(dir, outDir, merge || null);
+startConvert(dir, outDir, options.name);

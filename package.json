@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "convert": "node ./bin/config2ts -d ./config -o ./config",
+    "convert": "node ./bin/config2ts -n total1.ts -d ./config -o ./config",
     "test": "jest",
     "watch-test": "node_modules/.bin/jest --watch"
   },
