@@ -1,6 +1,6 @@
 {
   "name": "config2ts",
-  "version": "2.3.3",
+  "version": "2.4.0",
   "description": "convert config to ts file.",
   "main": "lib/config2ts.js",
   "types": "lib/config2ts.d.ts",
