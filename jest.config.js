@@ -1,13 +1,12 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} **/
+const { createDefaultPreset } = require("ts-jest");
+
+const tsJestTransformCfg = createDefaultPreset().transform;
+
+/** @type {import("jest").Config} **/
 module.exports = {
   testEnvironment: "node",
-  testTimeout: 600000,
   transform: {
-    "^.+\.tsx?$": ["ts-jest", {
-      tsconfig: {
-        types: ["node", "jest"],
-      },
-    }],
+    ...tsJestTransformCfg,
   },
   moduleNameMapper: {
     '^d3-dsv$': '<rootDir>/node_modules/d3-dsv/dist/d3-dsv.min.js',
