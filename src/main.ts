@@ -11,19 +11,17 @@ const program = new Command();
 program
   .version(pkg.version)
   .option("-n, --name <name>", "output file name", "csv.ts")
-  .option("-d, --dir <path>", "set convert path. default: ./")
-  .option("-o, --outDir <path>", "set outDir path. default: ./")
+  .option("-d, --dir <path>", "set convert path", ".")
+  .option("-o, --outDir <path>", "set outDir path")
   .parse(process.argv);
 
 const options = program.opts();
 console.log(options);
 
-let dir: string = options.dir || ".";
-dir = path.resolve(dir);
+const dir = path.resolve(options.dir);
 console.log("dir:", dir);
 
-let outDir: string = options.outDir || dir;
-outDir = path.resolve(outDir);
+let outDir = options.outDir ? path.resolve(options.outDir) : dir;
 console.log("outDir:", outDir);
 if (!fs.existsSync(outDir)) {
   fs.mkdirSync(outDir, { recursive: true });
