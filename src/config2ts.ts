@@ -9,6 +9,8 @@ const EnumStr = "Enum";
 const EnumIndexStr = "EnumIndex";
 const EnumArrayString = "Enum[]";
 const IndexStr = "Index";
+const RefPrefix = "Ref[";
+const RefSuffix = "]";
 
 type ConvertHandler = (str: string, moduleName: string) => string;
 
@@ -28,9 +30,15 @@ export const Convert: Record<string, ConvertHandler> = {
 
 function csv2ts(csvString: string, moduleName: string): string {
   let convert: Record<string, string> = {};
+  const refFields: string[] = [];
   const result = csvParse(csvString, function (d: Record<string, string>, i: number) {
     if (i === 0) {
       convert = d as Record<string, string>;
+      for (const k in convert) {
+        if (convert[k].startsWith(RefPrefix) && convert[k].endsWith(RefSuffix)) {
+          refFields.push(k);
+        }
+      }
       return null;
     } else {
       for (const k in d) {
@@ -50,6 +58,7 @@ function csv2ts(csvString: string, moduleName: string): string {
           } else {
             d[k] = d[k].trim().split(",").map((v) => v.trim()) as any;
           }
+        } else if (convert[k].startsWith(RefPrefix) && convert[k].endsWith(RefSuffix)) {
         } else {
           d[k] = String(d[k]);
         }
@@ -110,6 +119,10 @@ function csv2ts(csvString: string, moduleName: string): string {
         indexField = field;
       } else if (convert[field] == EnumArrayString) {
         fieldType = field + "[]";
+      } else if (convert[field].startsWith(RefPrefix) && convert[field].endsWith(RefSuffix)) {
+        const refModule = convert[field].slice(RefPrefix.length, -RefSuffix.length);
+        const refModuleName = changeCase.pascalCase(refModule);
+        fieldType = `${refModuleName}.Record`;
       } else {
         fieldType = convert[field].toLowerCase();
       }
@@ -130,9 +143,27 @@ function csv2ts(csvString: string, moduleName: string): string {
     result.length = filteredResult.length;
   }
 
-  template += "    export const List: Record[] = ";
-  template += json5.stringify(result, null, 4).replace(/\n/g, "\n    ");
-  template += ";\n\n";
+  template += "    export const List: Record[] = [\n";
+  for (let i = 0; i < result.length; i++) {
+    const row = result[i];
+    template += "        {\n";
+    for (const field in convert) {
+      let value = row[field];
+      if (convert[field].startsWith(RefPrefix) && convert[field].endsWith(RefSuffix)) {
+        const refModule = convert[field].slice(RefPrefix.length, -RefSuffix.length);
+        const refModuleName = changeCase.pascalCase(refModule);
+        template += `            ${serializeField(field)}: ${refModuleName}.Map[${JSON.stringify(value)}],\n`;
+      } else {
+        template += `            ${serializeField(field)}: ${json5.stringify(value)},\n`;
+      }
+    }
+    template += "        }";
+    if (i < result.length - 1) {
+      template += ",";
+    }
+    template += "\n";
+  }
+  template += "    ];\n\n";
   if (indexField != null) {
     template += "    export const Map: { [id: string]: Record } = {};\n";
     template += `    for (const v of List) { Map[v.${indexField}] = v; };\n\n`;

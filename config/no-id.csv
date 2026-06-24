@@ -1,5 +1,5 @@
-name,bool,num
-String,Boolean,Number
-"xxx",1,111
-"xxx",,222
-333,,
+name,bool,num,dataRecord
+String,Boolean,Number,Ref[data.csv]
+"xxx",1,111,1
+"xxx",,222,2
+333,,,3

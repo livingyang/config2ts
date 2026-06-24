@@ -25,19 +25,9 @@ export namespace DataCsv {
             bool: true,
             num: 111,
             mytype: 'type1',
-            stringarray: [
-                '1',
-                '2',
-                '3',
-            ],
-            numberarray: [
-                1,
-                2,
-                3,
-            ],
-            typearray: [
-                't1',
-            ],
+            stringarray: ['1', '2', '3'],
+            numberarray: [1, 2, 3],
+            typearray: ['t1'],
             'space field/sub': 'a',
         },
         {
@@ -46,17 +36,9 @@ export namespace DataCsv {
             bool: false,
             num: 222,
             mytype: 'type2',
-            stringarray: [
-                'a',
-                'b',
-            ],
-            numberarray: [
-                0,
-            ],
-            typearray: [
-                't1',
-                't2',
-            ],
+            stringarray: ['a', 'b'],
+            numberarray: [0],
+            typearray: ['t1', 't2'],
             'space field/sub': 'a',
         },
         {
@@ -66,15 +48,8 @@ export namespace DataCsv {
             num: NaN,
             mytype: '',
             stringarray: [],
-            numberarray: [
-                1,
-                2,
-            ],
-            typearray: [
-                't2',
-                't3',
-                't4',
-            ],
+            numberarray: [1, 2],
+            typearray: ['t2', 't3', 't4'],
             'space field/sub': 'b',
         },
         {
@@ -83,21 +58,11 @@ export namespace DataCsv {
             bool: true,
             num: Infinity,
             mytype: 'type2',
-            stringarray: [
-                '',
-                '1',
-                '',
-                'b',
-            ],
-            numberarray: [
-                0,
-                1,
-                0,
-                3,
-            ],
+            stringarray: ['', '1', '', 'b'],
+            numberarray: [0, 1, 0, 3],
             typearray: [],
             'space field/sub': 'c',
-        },
+        }
     ];
 
     export const Map: { [id: string]: Record } = {};
@@ -131,7 +96,7 @@ export namespace EnumIndexCsv {
             name: '333',
             bool: false,
             num: 0,
-        },
+        }
     ];
 
     export const Map: { [id: string]: Record } = {};
@@ -155,6 +120,7 @@ export namespace NoIdCsv {
         name: string;
         bool: boolean;
         num: number;
+        dataRecord: DataCsv.Record;
     };
 
     export const List: Record[] = [
@@ -162,17 +128,20 @@ export namespace NoIdCsv {
             name: 'xxx',
             bool: true,
             num: 111,
+            dataRecord: DataCsv.Map["1"],
         },
         {
             name: 'xxx',
             bool: false,
             num: 222,
+            dataRecord: DataCsv.Map["2"],
         },
         {
             name: '333',
             bool: false,
             num: 0,
-        },
+            dataRecord: DataCsv.Map["3"],
+        }
     ];
 
 };
