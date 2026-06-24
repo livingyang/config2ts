@@ -11,6 +11,8 @@ const EnumArrayString = "Enum[]";
 const IndexStr = "Index";
 const RefPrefix = "Ref[";
 const RefSuffix = "]";
+const RefEnumPrefix = "RefEnum[";
+const RefEnumArraySuffix = "][]";
 
 type ConvertHandler = (str: string, moduleName: string) => string;
 
@@ -31,12 +33,16 @@ export const Convert: Record<string, ConvertHandler> = {
 function csv2ts(csvString: string, moduleName: string): string {
   let convert: Record<string, string> = {};
   const refFields: string[] = [];
+  const refEnumFields: string[] = [];
   const result = csvParse(csvString, function (d: Record<string, string>, i: number) {
     if (i === 0) {
       convert = d as Record<string, string>;
       for (const k in convert) {
         if (convert[k].startsWith(RefPrefix) && convert[k].endsWith(RefSuffix)) {
           refFields.push(k);
+        }
+        if (parseRefEnum(convert[k])) {
+          refEnumFields.push(k);
         }
       }
       return null;
@@ -59,6 +65,22 @@ function csv2ts(csvString: string, moduleName: string): string {
             d[k] = d[k].trim().split(",").map((v) => v.trim()) as any;
           }
         } else if (convert[k].startsWith(RefPrefix) && convert[k].endsWith(RefSuffix)) {
+          if (d[k] === "") {
+            console.warn(`[config2ts] warning: ${moduleName} row ${i} field "${k}" ref value is empty`);
+          }
+        } else if (parseRefEnum(convert[k])) {
+          const refEnum = parseRefEnum(convert[k])!;
+          if (refEnum.isArray) {
+            if (d[k] === "") {
+              d[k] = [] as any;
+            } else {
+              d[k] = d[k].trim().split(",").map((v) => v.trim()) as any;
+            }
+          } else {
+            if (d[k] === "") {
+              console.warn(`[config2ts] warning: ${moduleName} row ${i} field "${k}" ref enum value is empty`);
+            }
+          }
         } else {
           d[k] = String(d[k]);
         }
@@ -123,6 +145,10 @@ function csv2ts(csvString: string, moduleName: string): string {
         const refModule = convert[field].slice(RefPrefix.length, -RefSuffix.length);
         const refModuleName = changeCase.pascalCase(refModule);
         fieldType = `${refModuleName}.Record`;
+      } else if (parseRefEnum(convert[field])) {
+        const refEnum = parseRefEnum(convert[field])!;
+        const refModuleName = changeCase.pascalCase(refEnum.refModule);
+        fieldType = refEnum.isArray ? `${refModuleName}.${refEnum.refField}[]` : `${refModuleName}.${refEnum.refField}`;
       } else {
         fieldType = convert[field].toLowerCase();
       }
@@ -177,6 +203,27 @@ function serializeField(key: string): string {
   obj[key] = true;
   const objString = json5.stringify(obj);
   return objString.includes("'") ? "'" + key + "'" : key;
+}
+
+function parseRefEnum(typeStr: string): { refModule: string; refField: string; isArray: boolean } | null {
+  if (typeStr.startsWith(RefEnumPrefix)) {
+    let isArray = false;
+    let inner = typeStr;
+    if (typeStr.endsWith(RefEnumArraySuffix)) {
+      isArray = true;
+      inner = typeStr.slice(0, -RefEnumArraySuffix.length) + RefSuffix;
+    }
+    if (inner.endsWith(RefSuffix)) {
+      const content = inner.slice(RefEnumPrefix.length, -RefSuffix.length);
+      const dotIndex = content.lastIndexOf(".");
+      if (dotIndex > 0) {
+        const refModule = content.slice(0, dotIndex);
+        const refField = content.slice(dotIndex + 1);
+        return { refModule, refField, isArray };
+      }
+    }
+  }
+  return null;
 }
 
 function GetFileExt(filePath: string): string {
