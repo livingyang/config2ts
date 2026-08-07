@@ -9,6 +9,7 @@ const EnumStr = "Enum";
 const EnumIndexStr = "EnumIndex";
 const EnumArrayString = "Enum[]";
 const IndexStr = "Index";
+const ObjectStr = "Object";
 const RefPrefix = "Ref[";
 const RefSuffix = "]";
 const RefEnumPrefix = "RefEnum[";
@@ -48,7 +49,9 @@ function csv2ts(csvString: string, moduleName: string): string {
       return null;
     } else {
       for (const k in d) {
-        if (typeof (global as any)[convert[k]] === "function") {
+        if (convert[k] === ObjectStr) {
+          d[k] = parseObject(d[k]) as any;
+        } else if (typeof (global as any)[convert[k]] === "function") {
           d[k] = (global as any)[convert[k]](d[k]);
         } else if (convert[k] === "String[]") {
           if (d[k] === "") {
@@ -123,6 +126,23 @@ function csv2ts(csvString: string, moduleName: string): string {
       const enumValueStrings = enumValues.map((value) => `"${value}"`);
       template += `    export type ${field} = ${enumValueStrings.join(" | ")};\n`;
       template += `    export const ${field}List: ${field}[] = [${enumValueStrings.join(", ")}];\n\n`;
+    } else if (convert[field] == ObjectStr) {
+      const keyTypes: Record<string, Set<string>> = {};
+      for (const row of result) {
+        const objValue = row[field];
+        for (const key in objValue) {
+          if (!keyTypes[key]) {
+            keyTypes[key] = new Set();
+          }
+          keyTypes[key].add(getTypeName(objValue[key]));
+        }
+      }
+      template += `    export type ${field} = {\n`;
+      for (const key in keyTypes) {
+        const types = Array.from(keyTypes[key]).join(" | ");
+        template += `        ${serializeField(key)}?: ${types};\n`;
+      }
+      template += `    };\n\n`;
     }
   }
 
@@ -141,6 +161,8 @@ function csv2ts(csvString: string, moduleName: string): string {
         indexField = field;
       } else if (convert[field] == EnumArrayString) {
         fieldType = field + "[]";
+      } else if (convert[field] == ObjectStr) {
+        fieldType = field;
       } else if (convert[field].startsWith(RefPrefix) && convert[field].endsWith(RefSuffix)) {
         const refModule = convert[field].slice(RefPrefix.length, -RefSuffix.length);
         const refModuleName = changeCase.pascalCase(refModule);
@@ -203,6 +225,41 @@ function serializeField(key: string): string {
   obj[key] = true;
   const objString = json5.stringify(obj);
   return objString.includes("'") ? "'" + key + "'" : key;
+}
+
+function parseObject(str: string): Record<string, any> {
+  const result: Record<string, any> = {};
+  const trimmed = str.trim();
+  if (trimmed === "") {
+    return result;
+  }
+  const pairs = trimmed.split(",");
+  for (const pair of pairs) {
+    const colonIndex = pair.indexOf(":");
+    if (colonIndex > 0) {
+      const key = pair.slice(0, colonIndex).trim();
+      const value = pair.slice(colonIndex + 1).trim();
+      result[key] = parseObjectValue(value);
+    }
+  }
+  return result;
+}
+
+function parseObjectValue(value: string): any {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  if (value === "") return "";
+  const num = Number(value);
+  if (!isNaN(num)) {
+    return num;
+  }
+  return value;
+}
+
+function getTypeName(value: any): string {
+  if (typeof value === "number") return "number";
+  if (typeof value === "boolean") return "boolean";
+  return "string";
 }
 
 function parseRefEnum(typeStr: string): { refModule: string; refField: string; isArray: boolean } | null {
