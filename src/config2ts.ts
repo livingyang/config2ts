@@ -325,7 +325,7 @@ function isLeafNode(value: AssetNode | { path: string; type: string }): value is
 
 function getUniformType(node: AssetNode): string | null {
   const values = Object.values(node);
-  if (values.length === 0) return null;
+  if (values.length <= 1) return null;
   let uniformType: string | null = null;
   for (const v of values) {
     if (!isLeafNode(v)) return null;
