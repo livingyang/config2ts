@@ -317,21 +317,60 @@ function scanDir(dir: string, basePath: string): AssetNode | null {
   return hasContent ? node : null;
 }
 
-function serializeAssetNode(node: AssetNode | null, indent: string): string {
-  if (node === null) return `${indent}{}`;
+function isLeafNode(value: AssetNode | { path: string; type: string }): value is { path: string; type: string } {
+  return "path" in value && "type" in value;
+}
+
+function getUniformType(node: AssetNode): string | null {
+  const values = Object.values(node);
+  if (values.length === 0) return null;
+  let uniformType: string | null = null;
+  for (const v of values) {
+    if (!isLeafNode(v)) return null;
+    if (uniformType === null) {
+      uniformType = v.type;
+    } else if (uniformType !== v.type) {
+      return null;
+    }
+  }
+  return uniformType;
+}
+
+function collectUniformDirs(node: AssetNode, dirTypes: Map<AssetNode, string>, exts: Set<string>): void {
+  const ut = getUniformType(node);
+  if (ut !== null) {
+    dirTypes.set(node, ut);
+    exts.add(ut);
+    return;
+  }
+  for (const v of Object.values(node)) {
+    if (!isLeafNode(v)) {
+      collectUniformDirs(v, dirTypes, exts);
+    }
+  }
+}
+
+function extToTypeName(ext: string): string {
+  return ext.charAt(0).toUpperCase() + ext.slice(1) + "Asset";
+}
+
+function serializeAssetNode(node: AssetNode, indent: string, uniformDirs: Map<AssetNode, string>, extTypeMap: Map<string, string>): string {
   const entries = Object.entries(node);
   if (entries.length === 0) return `${indent}{}`;
+  const ut = uniformDirs.get(node);
   const lines: string[] = [];
   for (let i = 0; i < entries.length; i++) {
     const [key, value] = entries[i];
     const serializedKey = serializeField(key);
     const comma = i < entries.length - 1 ? "," : "";
-    if ("path" in value && "type" in value) {
-      lines.push(`${indent}${serializedKey}: {path:${json5.stringify((value as any).path)},type:${json5.stringify((value as any).type)}}${comma}`);
+    if (isLeafNode(value)) {
+      lines.push(`${indent}${serializedKey}: {path:${json5.stringify(value.path)},type:${json5.stringify(value.type)}}${comma}`);
     } else {
+      const childUt = uniformDirs.get(value);
+      const typeAnnotation = childUt ? ` as Record<string, ${extTypeMap.get(childUt)}>` : "";
       lines.push(`${indent}${serializedKey}: {`);
-      lines.push(serializeAssetNode(value as AssetNode, indent + "    "));
-      lines.push(`${indent}}${comma}`);
+      lines.push(serializeAssetNode(value, indent + "    ", uniformDirs, extTypeMap));
+      lines.push(`${indent}}${typeAnnotation}${comma}`);
     }
   }
   return lines.join("\n");
@@ -348,10 +387,29 @@ export function assets2ts(assetsDir: string): string {
     return "";
   }
 
-  let template = `export const RES = {\n`;
+  const uniformDirs = new Map<AssetNode, string>();
+  const exts = new Set<string>();
+  collectUniformDirs(root, uniformDirs, exts);
+
+  const extTypeMap = new Map<string, string>();
+  const sortedExts = Array.from(exts).sort();
+  for (const ext of sortedExts) {
+    extTypeMap.set(ext, extToTypeName(ext));
+  }
+
+  let template = "";
+  for (const ext of sortedExts) {
+    const typeName = extTypeMap.get(ext)!;
+    template += `export type ${typeName} = { path: string; type: ${json5.stringify(ext)} };\n`;
+  }
+  if (sortedExts.length > 0) template += "\n";
+
+  template += `export const RES = {\n`;
+  const rootUt = uniformDirs.get(root);
   template += `    ${dirName}: {\n`;
-  template += serializeAssetNode(root, "        ");
-  template += `\n    }\n`;
+  template += serializeAssetNode(root, "        ", uniformDirs, extTypeMap);
+  const rootAnnotation = rootUt ? ` as Record<string, ${extTypeMap.get(rootUt)}>` : "";
+  template += `\n    }${rootAnnotation}\n`;
   template += `};\n`;
   return template;
 }

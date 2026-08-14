@@ -1,12 +1,15 @@
+export type PngAsset = { path: string; type: 'png' };
+export type SvgAsset = { path: string; type: 'svg' };
+
 export const RES = {
     public: {
         image: {
             adjustHorizontal: {path:'public/image/adjust-horizontal.png',type:'png'},
             direction: {path:'public/image/direction.png',type:'png'}
-        },
+        } as Record<string, PngAsset>,
         svg: {
             adjustHorizontal: {path:'public/svg/adjust-horizontal.svg',type:'svg'},
             direction: {path:'public/svg/direction.svg',type:'svg'}
-        }
+        } as Record<string, SvgAsset>
     }
 };
