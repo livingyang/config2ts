@@ -313,7 +313,7 @@ interface AssetNode {
   [key: string]: AssetNode | { path: string; type: string };
 }
 
-function scanDir(dir: string, basePath: string, groupMap: Record<string, { path: string; type: string }[]>): AssetNode | null {
+function scanDir(dir: string, basePath: string, refPrefix: string, groupMap: Record<string, string[]>): AssetNode | null {
   const node: AssetNode = {};
   let hasContent = false;
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -321,7 +321,8 @@ function scanDir(dir: string, basePath: string, groupMap: Record<string, { path:
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       const key = changeCase.camelCase(entry.name);
-      const childNode = scanDir(fullPath, path.posix.join(basePath, entry.name), groupMap);
+      const childRef = refPrefix ? `${refPrefix}.${key}` : key;
+      const childNode = scanDir(fullPath, path.posix.join(basePath, entry.name), childRef, groupMap);
       if (childNode !== null) {
         node[key] = childNode;
         hasContent = true;
@@ -338,7 +339,8 @@ function scanDir(dir: string, basePath: string, groupMap: Record<string, { path:
       if (!groupMap[type]) {
         groupMap[type] = [];
       }
-      groupMap[type].push(meta);
+      const ref = refPrefix ? `${refPrefix}.${key}` : key;
+      groupMap[type].push(ref);
     }
   }
   return hasContent ? node : null;
@@ -354,7 +356,7 @@ function serializeAssetNode(node: AssetNode | null, indent: string): string {
     const serializedKey = serializeField(key);
     const comma = i < entries.length - 1 ? "," : "";
     if ("path" in value && "type" in value) {
-      lines.push(`${indent}${serializedKey}: {path:${json5.stringify((value as any).path)},type:"${(value as any).type}"}${comma}`);
+      lines.push(`${indent}${serializedKey}: {path:${json5.stringify((value as any).path)},type:${json5.stringify((value as any).type)}} as AssetMeta${comma}`);
     } else {
       lines.push(`${indent}${serializedKey}: {`);
       lines.push(serializeAssetNode(value as AssetNode, indent + "    "));
@@ -369,8 +371,9 @@ export function assets2ts(assetsDir: string): string {
     return "";
   }
   const dirName = path.basename(assetsDir);
-  const groupMap: Record<string, { path: string; type: string }[]> = {};
-  const root = scanDir(assetsDir, dirName, groupMap);
+  const groupMap: Record<string, string[]> = {};
+  const resRefPrefix = `RES.${dirName}`;
+  const root = scanDir(assetsDir, dirName, resRefPrefix, groupMap);
 
   if (root === null) {
     return "";
@@ -394,9 +397,9 @@ export function assets2ts(assetsDir: string): string {
   template += `};\n\n`;
   template += `export const ASSET_GROUP: Record<AssetType, AssetMeta[]> = {\n`;
   for (const t of Array.from(allTypes).sort()) {
-    const items = groupMap[t] || [];
-    const itemStr = items.map((m) => `{path:${json5.stringify(m.path)},type:"${m.type}"}`).join(",");
-    template += `    "${t}": [${itemStr}],\n`;
+    const refs = groupMap[t] || [];
+    const refStr = refs.join(",");
+    template += `    "${t}": [${refStr}],\n`;
   }
   template += `};\n`;
   return template;

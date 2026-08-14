@@ -8,12 +8,12 @@ export interface AssetMeta {
 export const RES = {
     public: {
         image: {
-            adjustHorizontal: {path:'public/image/adjust-horizontal.png',type:"image"},
-            direction: {path:'public/image/direction.png',type:"image"}
+            adjustHorizontal: {path:'public/image/adjust-horizontal.png',type:'image'} as AssetMeta,
+            direction: {path:'public/image/direction.png',type:'image'} as AssetMeta
         },
         svg: {
-            adjustHorizontal: {path:'public/svg/adjust-horizontal.svg',type:"svg"},
-            direction: {path:'public/svg/direction.svg',type:"svg"}
+            adjustHorizontal: {path:'public/svg/adjust-horizontal.svg',type:'svg'} as AssetMeta,
+            direction: {path:'public/svg/direction.svg',type:'svg'} as AssetMeta
         }
     }
 };
@@ -21,7 +21,7 @@ export const RES = {
 export const ASSET_GROUP: Record<AssetType, AssetMeta[]> = {
     "audio": [],
     "config": [],
-    "image": [{path:'public/image/adjust-horizontal.png',type:"image"},{path:'public/image/direction.png',type:"image"}],
+    "image": [RES.public.image.adjustHorizontal,RES.public.image.direction],
     "other": [],
-    "svg": [{path:'public/svg/adjust-horizontal.svg',type:"svg"},{path:'public/svg/direction.svg',type:"svg"}],
+    "svg": [RES.public.svg.adjustHorizontal,RES.public.svg.direction],
 };
