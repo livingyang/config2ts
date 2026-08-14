@@ -61,11 +61,11 @@ export const ASSETS = {
         image: {
             adjustHorizontal: {path:'public/image/adjust-horizontal.png',type:'png'},
             direction: {path:'public/image/direction.png',type:'png'}
-        } as Record<string, PngAsset>,
+        } satisfies Record<string, PngAsset>,
         music: {
             effect1: {path:'public/music/effect1.mp3',type:'mp3'},
             effect2: {path:'public/music/effect2.mp3',type:'mp3'}
-        } as Record<string, Mp3Asset>,
+        } satisfies Record<string, Mp3Asset>,
         singleFile: {
             effect1: {path:'public/single-file/effect1.mp3',type:'mp3'}
         }

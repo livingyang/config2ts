@@ -369,7 +369,7 @@ function serializeAssetNode(node: AssetNode, indent: string, uniformDirs: Map<As
       lines.push(`${indent}${serializedKey}: {path:${json5.stringify(value.path)},type:${json5.stringify(value.type)}}${comma}`);
     } else {
       const childUt = uniformDirs.get(value);
-      const typeAnnotation = childUt ? ` as Record<string, ${extTypeMap.get(childUt)}>` : "";
+      const typeAnnotation = childUt ? ` satisfies Record<string, ${extTypeMap.get(childUt)}>` : "";
       lines.push(`${indent}${serializedKey}: {`);
       lines.push(serializeAssetNode(value, indent + "    ", uniformDirs, extTypeMap));
       lines.push(`${indent}}${typeAnnotation}${comma}`);
@@ -410,7 +410,7 @@ export function assets2ts(assetsDir: string): string {
   const rootUt = uniformDirs.get(root);
   template += `    ${dirName}: {\n`;
   template += serializeAssetNode(root, "        ", uniformDirs, extTypeMap);
-  const rootAnnotation = rootUt ? ` as Record<string, ${extTypeMap.get(rootUt)}>` : "";
+  const rootAnnotation = rootUt ? ` satisfies Record<string, ${extTypeMap.get(rootUt)}>` : "";
   template += `\n    }${rootAnnotation}\n`;
   template += `};\n`;
   return template;

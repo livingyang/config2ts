@@ -9,7 +9,7 @@ export const ASSETS = {
         image: {
             adjustHorizontal: {path:'public/image/adjust-horizontal.png',type:'png'},
             direction: {path:'public/image/direction.png',type:'png'}
-        } as Record<string, PngAsset>,
+        } satisfies Record<string, PngAsset>,
         mix: {
             adjustHorizontal: {path:'public/mix/adjust-horizontal.png',type:'png'},
             effect2: {path:'public/mix/effect2.mp3',type:'mp3'}
@@ -17,7 +17,7 @@ export const ASSETS = {
         music: {
             effect1: {path:'public/music/effect1.mp3',type:'mp3'},
             effect2: {path:'public/music/effect2.mp3',type:'mp3'}
-        } as Record<string, Mp3Asset>,
+        } satisfies Record<string, Mp3Asset>,
         singleFile: {
             effect1: {path:'public/single-file/effect1.mp3',type:'mp3'}
         },
@@ -25,11 +25,11 @@ export const ASSETS = {
             image: {
                 adjustHorizontal: {path:'public/sub/image/adjust-horizontal.png',type:'png'},
                 direction: {path:'public/sub/image/direction.png',type:'png'}
-            } as Record<string, PngAsset>
+            } satisfies Record<string, PngAsset>
         },
         svg: {
             adjustHorizontal: {path:'public/svg/adjust-horizontal.svg',type:'svg'},
             direction: {path:'public/svg/direction.svg',type:'svg'}
-        } as Record<string, SvgAsset>
+        } satisfies Record<string, SvgAsset>
     }
 };
