@@ -17,11 +17,3 @@ export const RES = {
         }
     }
 };
-
-export const ASSET_GROUP: Record<AssetType, AssetMeta[]> = {
-    "audio": [],
-    "config": [],
-    "image": [RES.public.image.adjustHorizontal,RES.public.image.direction],
-    "other": [],
-    "svg": [RES.public.svg.adjustHorizontal,RES.public.svg.direction],
-};

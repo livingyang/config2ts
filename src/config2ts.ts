@@ -313,7 +313,7 @@ interface AssetNode {
   [key: string]: AssetNode | { path: string; type: string };
 }
 
-function scanDir(dir: string, basePath: string, refPrefix: string, groupMap: Record<string, string[]>): AssetNode | null {
+function scanDir(dir: string, basePath: string): AssetNode | null {
   const node: AssetNode = {};
   let hasContent = false;
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -321,8 +321,7 @@ function scanDir(dir: string, basePath: string, refPrefix: string, groupMap: Rec
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       const key = changeCase.camelCase(entry.name);
-      const childRef = refPrefix ? `${refPrefix}.${key}` : key;
-      const childNode = scanDir(fullPath, path.posix.join(basePath, entry.name), childRef, groupMap);
+      const childNode = scanDir(fullPath, path.posix.join(basePath, entry.name));
       if (childNode !== null) {
         node[key] = childNode;
         hasContent = true;
@@ -333,14 +332,8 @@ function scanDir(dir: string, basePath: string, refPrefix: string, groupMap: Rec
       const key = changeCase.camelCase(parsed.name);
       const relPath = path.posix.join(basePath, entry.name);
       const type = getAssetType(ext);
-      const meta = { path: relPath, type };
-      node[key] = meta;
+      node[key] = { path: relPath, type };
       hasContent = true;
-      if (!groupMap[type]) {
-        groupMap[type] = [];
-      }
-      const ref = refPrefix ? `${refPrefix}.${key}` : key;
-      groupMap[type].push(ref);
     }
   }
   return hasContent ? node : null;
@@ -371,18 +364,13 @@ export function assets2ts(assetsDir: string): string {
     return "";
   }
   const dirName = path.basename(assetsDir);
-  const groupMap: Record<string, string[]> = {};
-  const resRefPrefix = `RES.${dirName}`;
-  const root = scanDir(assetsDir, dirName, resRefPrefix, groupMap);
+  const root = scanDir(assetsDir, dirName);
 
   if (root === null) {
     return "";
   }
 
   const allTypes = new Set<string>([...Object.values(EXT_MAP), "other"]);
-  for (const t of Object.keys(groupMap)) {
-    allTypes.add(t);
-  }
   const typeStrings = Array.from(allTypes).map((t) => `"${t}"`);
 
   let template = `export type AssetType = ${typeStrings.join(" | ")};\n\n`;
@@ -394,13 +382,6 @@ export function assets2ts(assetsDir: string): string {
   template += `    ${dirName}: {\n`;
   template += serializeAssetNode(root, "        ");
   template += `\n    }\n`;
-  template += `};\n\n`;
-  template += `export const ASSET_GROUP: Record<AssetType, AssetMeta[]> = {\n`;
-  for (const t of Array.from(allTypes).sort()) {
-    const refs = groupMap[t] || [];
-    const refStr = refs.join(",");
-    template += `    "${t}": [${refStr}],\n`;
-  }
   template += `};\n`;
   return template;
 }
