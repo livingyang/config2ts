@@ -15,6 +15,23 @@ const RefSuffix = "]";
 const RefEnumPrefix = "RefEnum[";
 const RefEnumArraySuffix = "][]";
 
+const EXT_MAP: Record<string, string> = {
+  png: "image",
+  jpg: "image",
+  jpeg: "image",
+  webp: "image",
+  gif: "image",
+  bmp: "image",
+  mp3: "audio",
+  wav: "audio",
+  ogg: "audio",
+  csv: "config",
+  json: "config",
+  toml: "config",
+  ini: "config",
+  svg: "svg",
+};
+
 type ConvertHandler = (str: string, moduleName: string) => string;
 
 export const Convert: Record<string, ConvertHandler> = {
@@ -288,6 +305,103 @@ function GetFileExt(filePath: string): string {
   return pathObject.ext.slice(1);
 }
 
+function getAssetType(ext: string): string {
+  return EXT_MAP[ext.toLowerCase()] || "other";
+}
+
+interface AssetNode {
+  [key: string]: AssetNode | { path: string; type: string };
+}
+
+function scanDir(dir: string, basePath: string, groupMap: Record<string, { path: string; type: string }[]>): AssetNode | null {
+  const node: AssetNode = {};
+  let hasContent = false;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      const key = changeCase.camelCase(entry.name);
+      const childNode = scanDir(fullPath, path.posix.join(basePath, entry.name), groupMap);
+      if (childNode !== null) {
+        node[key] = childNode;
+        hasContent = true;
+      }
+    } else if (entry.isFile()) {
+      const parsed = path.parse(entry.name);
+      const ext = parsed.ext.slice(1);
+      const key = changeCase.camelCase(parsed.name);
+      const relPath = path.posix.join(basePath, entry.name);
+      const type = getAssetType(ext);
+      const meta = { path: relPath, type };
+      node[key] = meta;
+      hasContent = true;
+      if (!groupMap[type]) {
+        groupMap[type] = [];
+      }
+      groupMap[type].push(meta);
+    }
+  }
+  return hasContent ? node : null;
+}
+
+function serializeAssetNode(node: AssetNode | null, indent: string): string {
+  if (node === null) return `${indent}{}`;
+  const entries = Object.entries(node);
+  if (entries.length === 0) return `${indent}{}`;
+  const lines: string[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const [key, value] = entries[i];
+    const serializedKey = serializeField(key);
+    const comma = i < entries.length - 1 ? "," : "";
+    if ("path" in value && "type" in value) {
+      lines.push(`${indent}${serializedKey}: {path:${json5.stringify((value as any).path)},type:"${(value as any).type}"}${comma}`);
+    } else {
+      lines.push(`${indent}${serializedKey}: {`);
+      lines.push(serializeAssetNode(value as AssetNode, indent + "    "));
+      lines.push(`${indent}}${comma}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+export function assets2ts(assetsDir: string): string {
+  if (!fs.existsSync(assetsDir)) {
+    return "";
+  }
+  const dirName = path.basename(assetsDir);
+  const groupMap: Record<string, { path: string; type: string }[]> = {};
+  const root = scanDir(assetsDir, dirName, groupMap);
+
+  if (root === null) {
+    return "";
+  }
+
+  const allTypes = new Set<string>([...Object.values(EXT_MAP), "other"]);
+  for (const t of Object.keys(groupMap)) {
+    allTypes.add(t);
+  }
+  const typeStrings = Array.from(allTypes).map((t) => `"${t}"`);
+
+  let template = `export type AssetType = ${typeStrings.join(" | ")};\n\n`;
+  template += `export interface AssetMeta {\n`;
+  template += `    path: string;\n`;
+  template += `    type: AssetType;\n`;
+  template += `}\n\n`;
+  template += `export const RES = {\n`;
+  template += `    ${dirName}: {\n`;
+  template += serializeAssetNode(root, "        ");
+  template += `\n    }\n`;
+  template += `};\n\n`;
+  template += `export const ASSET_GROUP: Record<AssetType, AssetMeta[]> = {\n`;
+  for (const t of Array.from(allTypes).sort()) {
+    const items = groupMap[t] || [];
+    const itemStr = items.map((m) => `{path:${json5.stringify(m.path)},type:"${m.type}"}`).join(",");
+    template += `    "${t}": [${itemStr}],\n`;
+  }
+  template += `};\n`;
+  return template;
+}
+
 export function GetTsString(filePath: string): string {
   const pathObject = path.parse(filePath);
   const handle = Convert[GetFileExt(filePath)];
@@ -315,7 +429,7 @@ export function GetValidFileList(fileList: string[]): string[] {
   });
 }
 
-export function startConvert(dir: string, outDir: string, merge: string): void {
+export function startConvert(dir: string, outDir: string, merge: string, assetsDir?: string): void {
   const fileList = fs.readdirSync(dir);
   const fullFileList = GetValidFileList(fileList).map(function (filename: string) {
     return path.join(dir, filename);
@@ -323,4 +437,13 @@ export function startConvert(dir: string, outDir: string, merge: string): void {
   const mergeFile = path.join(outDir, merge);
   fs.writeFileSync(mergeFile, GetTsStringFromFileList(fullFileList), { encoding: "utf-8" });
   console.log(`config2ts, ${fullFileList.length} config files, merge into: ${mergeFile}`);
+
+  if (assetsDir) {
+    const assetsOutput = assets2ts(assetsDir);
+    if (assetsOutput) {
+      const assetsFile = path.join(outDir, "assets.ts");
+      fs.writeFileSync(assetsFile, assetsOutput, { encoding: "utf-8" });
+      console.log(`assets2ts, resource dir: ${assetsDir}, output: ${assetsFile}`);
+    }
+  }
 }

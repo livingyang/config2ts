@@ -13,6 +13,7 @@ program
   .option("-n, --name <name>", "output file name", "csv.ts")
   .option("-d, --dir <path>", "set convert path", ".")
   .option("-o, --outDir <path>", "set outDir path")
+  .option("-a, --assets <path>", "set assets resource directory for asset index", "public")
   .parse(process.argv);
 
 const options = program.opts();
@@ -27,4 +28,9 @@ if (!fs.existsSync(outDir)) {
   fs.mkdirSync(outDir, { recursive: true });
 }
 
-startConvert(dir, outDir, options.name);
+const assetsDir = options.assets ? path.resolve(options.assets) : undefined;
+if (assetsDir) {
+  console.log("assetsDir:", assetsDir);
+}
+
+startConvert(dir, outDir, options.name, assetsDir);
