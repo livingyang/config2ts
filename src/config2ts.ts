@@ -15,23 +15,6 @@ const RefSuffix = "]";
 const RefEnumPrefix = "RefEnum[";
 const RefEnumArraySuffix = "][]";
 
-const EXT_MAP: Record<string, string> = {
-  png: "image",
-  jpg: "image",
-  jpeg: "image",
-  webp: "image",
-  gif: "image",
-  bmp: "image",
-  mp3: "audio",
-  wav: "audio",
-  ogg: "audio",
-  csv: "config",
-  json: "config",
-  toml: "config",
-  ini: "config",
-  svg: "svg",
-};
-
 type ConvertHandler = (str: string, moduleName: string) => string;
 
 export const Convert: Record<string, ConvertHandler> = {
@@ -305,10 +288,6 @@ function GetFileExt(filePath: string): string {
   return pathObject.ext.slice(1);
 }
 
-function getAssetType(ext: string): string {
-  return EXT_MAP[ext.toLowerCase()] || "other";
-}
-
 interface AssetNode {
   [key: string]: AssetNode | { path: string; type: string };
 }
@@ -328,11 +307,10 @@ function scanDir(dir: string, basePath: string): AssetNode | null {
       }
     } else if (entry.isFile()) {
       const parsed = path.parse(entry.name);
-      const ext = parsed.ext.slice(1);
+      const ext = parsed.ext.slice(1).toLowerCase();
       const key = changeCase.camelCase(parsed.name);
       const relPath = path.posix.join(basePath, entry.name);
-      const type = getAssetType(ext);
-      node[key] = { path: relPath, type };
+      node[key] = { path: relPath, type: ext };
       hasContent = true;
     }
   }
@@ -349,7 +327,7 @@ function serializeAssetNode(node: AssetNode | null, indent: string): string {
     const serializedKey = serializeField(key);
     const comma = i < entries.length - 1 ? "," : "";
     if ("path" in value && "type" in value) {
-      lines.push(`${indent}${serializedKey}: {path:${json5.stringify((value as any).path)},type:${json5.stringify((value as any).type)}} as AssetMeta${comma}`);
+      lines.push(`${indent}${serializedKey}: {path:${json5.stringify((value as any).path)},type:${json5.stringify((value as any).type)}}${comma}`);
     } else {
       lines.push(`${indent}${serializedKey}: {`);
       lines.push(serializeAssetNode(value as AssetNode, indent + "    "));
@@ -370,15 +348,7 @@ export function assets2ts(assetsDir: string): string {
     return "";
   }
 
-  const allTypes = new Set<string>([...Object.values(EXT_MAP), "other"]);
-  const typeStrings = Array.from(allTypes).map((t) => `"${t}"`);
-
-  let template = `export type AssetType = ${typeStrings.join(" | ")};\n\n`;
-  template += `export interface AssetMeta {\n`;
-  template += `    path: string;\n`;
-  template += `    type: AssetType;\n`;
-  template += `}\n\n`;
-  template += `export const RES = {\n`;
+  let template = `export const RES = {\n`;
   template += `    ${dirName}: {\n`;
   template += serializeAssetNode(root, "        ");
   template += `\n    }\n`;
