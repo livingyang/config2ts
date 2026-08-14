@@ -56,7 +56,7 @@ export type Mp3Asset = { path: string; type: 'mp3' };
 export type PngAsset = { path: string; type: 'png' };
 export type SvgAsset = { path: string; type: 'svg' };
 
-export const RES = {
+export const ASSETS = {
     public: {
         image: {
             adjustHorizontal: {path:'public/image/adjust-horizontal.png',type:'png'},
@@ -76,9 +76,9 @@ export const RES = {
 ### usage
 
 ```typescript
-import { RES } from "./assets";
+import { ASSETS } from "./assets";
 
-const meta = RES.public.image.adjustHorizontal;
+const meta = ASSETS.public.image.adjustHorizontal;
 // meta.path → 'public/image/adjust-horizontal.png'
 // meta.type → 'png'
 ```

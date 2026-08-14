@@ -4,7 +4,7 @@ export type Mp3Asset = { path: string; type: 'mp3' };
 export type PngAsset = { path: string; type: 'png' };
 export type SvgAsset = { path: string; type: 'svg' };
 
-export const RES = {
+export const ASSETS = {
     public: {
         image: {
             adjustHorizontal: {path:'public/image/adjust-horizontal.png',type:'png'},

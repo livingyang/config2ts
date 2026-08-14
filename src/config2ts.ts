@@ -406,7 +406,7 @@ export function assets2ts(assetsDir: string): string {
   }
   if (sortedExts.length > 0) template += "\n";
 
-  template += `export const RES = {\n`;
+  template += `export const ASSETS = {\n`;
   const rootUt = uniformDirs.get(root);
   template += `    ${dirName}: {\n`;
   template += serializeAssetNode(root, "        ", uniformDirs, extTypeMap);
