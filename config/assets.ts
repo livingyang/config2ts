@@ -7,28 +7,28 @@ export type SvgAsset = { path: string; type: 'svg' };
 export const ASSETS = {
     public: {
         image: {
-            adjustHorizontal: {path:'public/image/adjust-horizontal.png',type:'png'},
+            'adjust-horizontal': {path:'public/image/adjust-horizontal.png',type:'png'},
             Direction: {path:'public/image/Direction.png',type:'png'}
         } satisfies Record<string, PngAsset>,
         mix: {
-            adjustHorizontal: {path:'public/mix/adjust-horizontal.png',type:'png'},
+            'adjust-horizontal': {path:'public/mix/adjust-horizontal.png',type:'png'},
             effect2: {path:'public/mix/effect2.mp3',type:'mp3'}
         },
         music: {
             effect1: {path:'public/music/effect1.mp3',type:'mp3'},
             effect2: {path:'public/music/effect2.mp3',type:'mp3'}
         } satisfies Record<string, Mp3Asset>,
-        singleFile: {
+        'single-file': {
             effect1: {path:'public/single-file/effect1.mp3',type:'mp3'}
         },
         sub: {
             image: {
-                adjustHorizontal: {path:'public/sub/image/adjust-horizontal.png',type:'png'},
+                'adjust-horizontal': {path:'public/sub/image/adjust-horizontal.png',type:'png'},
                 direction: {path:'public/sub/image/direction.png',type:'png'}
             } satisfies Record<string, PngAsset>
         },
         svg: {
-            adjustHorizontal: {path:'public/svg/adjust-horizontal.svg',type:'svg'},
+            'adjust-horizontal': {path:'public/svg/adjust-horizontal.svg',type:'svg'},
             direction: {path:'public/svg/direction.svg',type:'svg'}
         } satisfies Record<string, SvgAsset>
     }

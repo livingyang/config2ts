@@ -41,7 +41,7 @@ Scan assets directory and generate an `assets.ts` index file with nested resourc
 
 - `-a, --assets <path>` set assets resource directory. default: `public`
 - Output file: `assets.ts` (alongside the merged config file)
-- Hyphens/underscores in directory/filenames are removed, and the following character is capitalized; original case of the first character is preserved (e.g., `adjust-horizontal.png` → `adjustHorizontal`, `Direction.png` → `Direction`)
+- File and directory names are used exactly as-is (e.g., `Direction.png` → `Direction`, `adjust-horizontal.png` → `'adjust-horizontal'`); keys with special characters are automatically quoted
 - `type` field uses file extension (lowercase), e.g. `'png'`, `'mp3'`, `'svg'`
 - Directories containing 2+ files of the same extension get a dedicated type (e.g. `PngAsset`, `Mp3Asset`) and `satisfies Record<string, XxxAsset>` annotation
 - Directories with ≤1 file or mixed extensions do not get a type annotation
@@ -59,14 +59,14 @@ export type SvgAsset = { path: string; type: 'svg' };
 export const ASSETS = {
     public: {
         image: {
-            adjustHorizontal: {path:'public/image/adjust-horizontal.png',type:'png'},
+            'adjust-horizontal': {path:'public/image/adjust-horizontal.png',type:'png'},
             Direction: {path:'public/image/Direction.png',type:'png'}
         } satisfies Record<string, PngAsset>,
         music: {
             effect1: {path:'public/music/effect1.mp3',type:'mp3'},
             effect2: {path:'public/music/effect2.mp3',type:'mp3'}
         } satisfies Record<string, Mp3Asset>,
-        singleFile: {
+        'single-file': {
             effect1: {path:'public/single-file/effect1.mp3',type:'mp3'}
         }
     }
@@ -78,9 +78,12 @@ export const ASSETS = {
 ```typescript
 import { ASSETS } from "./assets";
 
-const meta = ASSETS.public.image.adjustHorizontal;
-// meta.path → 'public/image/adjust-horizontal.png'
+const meta = ASSETS.public.image.Direction;
+// meta.path → 'public/image/Direction.png'
 // meta.type → 'png'
+
+const adjustMeta = ASSETS.public.image['adjust-horizontal'];
+// adjustMeta.path → 'public/image/adjust-horizontal.png'
 ```
 
 ## Options

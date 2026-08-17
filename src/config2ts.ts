@@ -290,10 +290,6 @@ function GetFileExt(filePath: string): string {
   return pathObject.ext.slice(1);
 }
 
-function toAssetKey(name: string): string {
-  return name.replace(/[-_]+([a-zA-Z])/g, (_, char) => char.toUpperCase());
-}
-
 interface AssetNode {
   [key: string]: AssetNode | { path: string; type: string };
 }
@@ -305,7 +301,7 @@ function scanDir(dir: string, basePath: string): AssetNode | null {
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      const key = toAssetKey(entry.name);
+      const key = entry.name;
       const childNode = scanDir(fullPath, path.posix.join(basePath, entry.name));
       if (childNode !== null) {
         node[key] = childNode;
@@ -314,7 +310,7 @@ function scanDir(dir: string, basePath: string): AssetNode | null {
     } else if (entry.isFile()) {
       const parsed = path.parse(entry.name);
       const ext = parsed.ext.slice(1).toLowerCase();
-      const key = toAssetKey(parsed.name);
+      const key = parsed.name;
       const relPath = path.posix.join(basePath, entry.name);
       node[key] = { path: relPath, type: ext };
       hasContent = true;
