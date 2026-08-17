@@ -8,7 +8,7 @@ export const ASSETS = {
     public: {
         image: {
             adjustHorizontal: {path:'public/image/adjust-horizontal.png',type:'png'},
-            direction: {path:'public/image/direction.png',type:'png'}
+            Direction: {path:'public/image/Direction.png',type:'png'}
         } satisfies Record<string, PngAsset>,
         mix: {
             adjustHorizontal: {path:'public/mix/adjust-horizontal.png',type:'png'},

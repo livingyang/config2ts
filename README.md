@@ -41,9 +41,9 @@ Scan assets directory and generate an `assets.ts` index file with nested resourc
 
 - `-a, --assets <path>` set assets resource directory. default: `public`
 - Output file: `assets.ts` (alongside the merged config file)
-- Directory/filenames are converted to camelCase keys
+- Hyphens/underscores in directory/filenames are removed, and the following character is capitalized; original case of the first character is preserved (e.g., `adjust-horizontal.png` → `adjustHorizontal`, `Direction.png` → `Direction`)
 - `type` field uses file extension (lowercase), e.g. `'png'`, `'mp3'`, `'svg'`
-- Directories containing 2+ files of the same extension get a dedicated type (e.g. `PngAsset`, `Mp3Asset`) and `as Record<string, XxxAsset>` annotation
+- Directories containing 2+ files of the same extension get a dedicated type (e.g. `PngAsset`, `Mp3Asset`) and `satisfies Record<string, XxxAsset>` annotation
 - Directories with ≤1 file or mixed extensions do not get a type annotation
 - Nested directories are supported (e.g. `public/sub/image/`)
 
@@ -60,7 +60,7 @@ export const ASSETS = {
     public: {
         image: {
             adjustHorizontal: {path:'public/image/adjust-horizontal.png',type:'png'},
-            direction: {path:'public/image/direction.png',type:'png'}
+            Direction: {path:'public/image/Direction.png',type:'png'}
         } satisfies Record<string, PngAsset>,
         music: {
             effect1: {path:'public/music/effect1.mp3',type:'mp3'},
