@@ -1,7 +1,7 @@
 {
   "name": "config2ts",
   "version": "2.5.5",
-  "description": "convert config to ts file.",
+  "description": "Generate type-safe TypeScript from CSV/INI/TOML config tables — inferred types, enums, cross-table references, and a typed asset index, all from one CLI command.",
   "main": "lib/config2ts.js",
   "types": "lib/config2ts.d.ts",
   "bin": {
