@@ -125,6 +125,10 @@ fruit = 2
 | `Enum[]` | 联合类型数组 | 枚举数组 |
 | `Object` | 对象类型 | 解析 `key:value,key:value` 格式，自动推断值类型 |
 | `Object[]` | 对象数组 | 分号分隔对象，对象内逗号分隔 `key:value`；n 个分号 → n+1 个对象，空对象槽位为 `{}` |
+| `Ref[file]` | `表名.Record` | 引用其他表整行，值为目标行 Index，生成 `表名.Map["id"]` |
+| `Ref[file][]` | `表名.Record[]` | 引用数组，逗号分隔多个 Index，生成 `[表名.Map["id"],...]` |
+| `RefEnum[file.field]` | `表名.字段名` | 引用其他表的枚举字段 |
+| `RefEnum[file.field][]` | `表名.字段名[]` | 引用其他表的枚举数组 |
 
 ### 类型说明
 
@@ -186,6 +190,35 @@ export const List: Record[] = [
     },
 ];
 ```
+
+### Ref[] - 引用其他 CSV 的 Record 数组
+
+使用 `Ref[文件名][]` 类型可以一次引用其他 CSV 的多行记录（逗号分隔多个目标行 Index），适合"一组有身份的子对象"场景（如奖励组、波次配置）；内联私有的结构化列表应使用 `Object[]`。
+
+**语法：**
+```csv
+refArr
+Ref[other.csv][]
+```
+单元格写逗号分隔的多个 Index（数组写法与 `String[]` 一致，空单元格为 `[]`，空槽位按数组 n+1 规则保留）：
+```csv
+"key1,key2"
+```
+
+**生成的代码：**
+```typescript
+export interface Record {
+    refArr: OtherCsv.Record[];
+};
+
+export const List: Record[] = [
+    {
+        refArr: [OtherCsv.Map["key1"],OtherCsv.Map["key2"]],
+    },
+];
+```
+
+> 数组中出现空 id（如 `"key1,,key2"`）会生成 `OtherCsv.Map[""]`（运行时为 `undefined`）并输出警告。
 
 ### RefEnum - 引用其他 CSV 的枚举类型
 
@@ -384,7 +417,7 @@ npx nodemon --ext csv,ini,toml --exec "config2ts -d config -o src/types -n confi
 
 ### 生成的代码有类型错误或数据不符合预期怎么办？
 
-1. 留意转换时的警告输出：类型名拼写错误等未识别类型会按 `string` 处理并告警；`Ref` / `RefEnum` 引用值为空也会告警
+1. 留意转换时的警告输出：类型名拼写错误等未识别类型会按 `string` 处理并告警；`Ref` / `RefEnum` 引用值为空、`Ref[]` 数组含空 id 槽位也会告警
 2. 检查 CSV 前两行（字段名行、类型行）是否正确；含逗号的字段需用双引号包裹
 3. 生成文件带有 `DO NOT EDIT` 头，每次转换会整体覆盖，请勿在生成文件中手写定制内容
 

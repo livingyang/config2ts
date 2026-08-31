@@ -148,6 +148,7 @@ export namespace NoIdCsv {
         myType: DataCsv.mytype;
         typeArr: DataCsv.typearray[];
         enumIndexRecord: EnumIndexCsv.Record;
+        recordArr: DataCsv.Record[];
     };
 
     export const List: Record[] = [
@@ -159,6 +160,7 @@ export namespace NoIdCsv {
             myType: 'type1',
             typeArr: ['t1','t2'],
             enumIndexRecord: EnumIndexCsv.Map["111"],
+            recordArr: [DataCsv.Map["1"],DataCsv.Map["2"]],
         },
         {
             name: 'xxx',
@@ -168,6 +170,7 @@ export namespace NoIdCsv {
             myType: 'type2',
             typeArr: [],
             enumIndexRecord: EnumIndexCsv.Map["222"],
+            recordArr: [],
         },
         {
             name: '333',
@@ -177,6 +180,7 @@ export namespace NoIdCsv {
             myType: '',
             typeArr: [],
             enumIndexRecord: EnumIndexCsv.Map["333"],
+            recordArr: [DataCsv.Map["3"]],
         }
     ];
 

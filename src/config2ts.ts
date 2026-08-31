@@ -42,7 +42,7 @@ function csv2ts(csvString: string, moduleName: string): string {
     if (i === 0) {
       convert = d as Record<string, string>;
       for (const k in convert) {
-        if (convert[k].startsWith(RefPrefix) && convert[k].endsWith(RefSuffix)) {
+        if (parseRef(convert[k])) {
           refFields.push(k);
         }
         if (parseRefEnum(convert[k])) {
@@ -66,8 +66,15 @@ function csv2ts(csvString: string, moduleName: string): string {
           d[k] = splitStringArray(d[k]) as any;
         } else if (convert[k] === "Number[]") {
           d[k] = splitStringArray(d[k]).map((val) => Number(val)) as any;
-        } else if (convert[k].startsWith(RefPrefix) && convert[k].endsWith(RefSuffix)) {
-          if (d[k] === "") {
+        } else if (parseRef(convert[k])) {
+          const ref = parseRef(convert[k])!;
+          if (ref.isArray) {
+            const ids = splitStringArray(d[k]);
+            d[k] = ids as any;
+            if (ids.includes("")) {
+              console.warn(`[config2ts] warning: ${moduleName} row ${i} field "${k}" ref array contains an empty id`);
+            }
+          } else if (d[k] === "") {
             console.warn(`[config2ts] warning: ${moduleName} row ${i} field "${k}" ref value is empty`);
           }
         } else if (parseRefEnum(convert[k])) {
@@ -163,10 +170,10 @@ function csv2ts(csvString: string, moduleName: string): string {
         fieldType = field;
       } else if (convert[field] == ObjectArrayString) {
         fieldType = field + "[]";
-      } else if (convert[field].startsWith(RefPrefix) && convert[field].endsWith(RefSuffix)) {
-        const refModule = convert[field].slice(RefPrefix.length, -RefSuffix.length);
-        const refModuleName = changeCase.pascalCase(refModule);
-        fieldType = `${refModuleName}.Record`;
+      } else if (parseRef(convert[field])) {
+        const ref = parseRef(convert[field])!;
+        const refModuleName = changeCase.pascalCase(ref.refModule);
+        fieldType = ref.isArray ? `${refModuleName}.Record[]` : `${refModuleName}.Record`;
       } else if (parseRefEnum(convert[field])) {
         const refEnum = parseRefEnum(convert[field])!;
         const refModuleName = changeCase.pascalCase(refEnum.refModule);
@@ -197,10 +204,15 @@ function csv2ts(csvString: string, moduleName: string): string {
     template += "        {\n";
     for (const field in convert) {
       let value = row[field];
-      if (convert[field].startsWith(RefPrefix) && convert[field].endsWith(RefSuffix)) {
-        const refModule = convert[field].slice(RefPrefix.length, -RefSuffix.length);
-        const refModuleName = changeCase.pascalCase(refModule);
-        template += `            ${serializeField(field)}: ${refModuleName}.Map[${JSON.stringify(value)}],\n`;
+      if (parseRef(convert[field])) {
+        const ref = parseRef(convert[field])!;
+        const refModuleName = changeCase.pascalCase(ref.refModule);
+        if (ref.isArray) {
+          const refs = (value as string[]).map((id) => `${refModuleName}.Map[${JSON.stringify(id)}]`).join(",");
+          template += `            ${serializeField(field)}: [${refs}],\n`;
+        } else {
+          template += `            ${serializeField(field)}: ${refModuleName}.Map[${JSON.stringify(value)}],\n`;
+        }
       } else {
         template += `            ${serializeField(field)}: ${json5.stringify(value)},\n`;
       }
@@ -302,7 +314,7 @@ function isKnownType(typeStr: string): boolean {
   if (knownTypes.includes(typeStr)) {
     return true;
   }
-  if (typeStr.startsWith(RefPrefix) && typeStr.endsWith(RefSuffix)) {
+  if (parseRef(typeStr)) {
     return true;
   }
   if (parseRefEnum(typeStr)) {
@@ -312,6 +324,27 @@ function isKnownType(typeStr: string): boolean {
     return true;
   }
   return false;
+}
+
+// Parse Ref[module] (single) and Ref[module][] (array of row references).
+// Note: "RefEnum[...]" starts with "RefE", so it never collides with "Ref[".
+function parseRef(typeStr: string): { refModule: string; isArray: boolean } | null {
+  if (!typeStr.startsWith(RefPrefix)) {
+    return null;
+  }
+  let isArray = false;
+  let inner = typeStr;
+  if (typeStr.endsWith(RefEnumArraySuffix)) {
+    isArray = true;
+    inner = typeStr.slice(0, -RefEnumArraySuffix.length) + RefSuffix;
+  }
+  if (inner.startsWith(RefPrefix) && inner.endsWith(RefSuffix)) {
+    const refModule = inner.slice(RefPrefix.length, -RefSuffix.length);
+    if (refModule !== "") {
+      return { refModule, isArray };
+    }
+  }
+  return null;
 }
 
 function parseRefEnum(typeStr: string): { refModule: string; refField: string; isArray: boolean } | null {
