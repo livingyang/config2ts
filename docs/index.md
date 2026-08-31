@@ -10,7 +10,9 @@
 - [支持的配置格式](#支持的配置格式)
 - [CSV 字段类型](#csv-字段类型)
 - [引用功能](#引用功能)
+- [资源索引](#资源索引assets2ts)
 - [示例](#示例)
+- [常见问题](#常见问题)
 - [注意事项](#注意事项)
 
 ## 快速开始
@@ -49,6 +51,7 @@ config2ts [options]
 | `--name <name>` | `-n` | 输出文件名 | `csv.ts` |
 | `--dir <path>` | `-d` | 配置文件目录 | `.` |
 | `--outDir <path>` | `-o` | 输出目录 | 与配置目录相同 |
+| `--assets <path>` | `-a` | 资源目录，扫描生成 `assets.ts` 资源索引 | `public` |
 | `--version` | `-V` | 输出版本号 | - |
 | `--help` | `-h` | 显示帮助 | - |
 
@@ -256,6 +259,29 @@ export namespace NoIdCsv {
 [config2ts] warning: NoIdCsv row 3 field "myType" ref enum value is empty
 ```
 
+## 资源索引（assets2ts）
+
+使用 `-a, --assets <path>` 指定资源目录（默认 `public`），工具会递归扫描目录并在输出目录生成 `assets.ts`：
+
+```bash
+config2ts -d ./config -o ./src/types -n config.ts -a public
+```
+
+生成的 `ASSETS` 常量按目录结构嵌套组织，每个文件为 `{ path, type }`：
+
+- `path` 为相对路径，`type` 为小写扩展名（如 `'png'`、`'mp3'`、`'svg'`）
+- 文件名与目录名原样保留（如 `Direction.png` → `Direction`），含特殊字符的键自动加引号
+- 含 2 个以上同格式文件的目录会生成专有类型（如 `PngAsset`、`Mp3Asset`）并标注 `satisfies Record<string, XxxAsset>`；只有 1 个文件或格式混杂的目录不加类型标注
+- 支持嵌套目录（如 `public/sub/image/`）
+
+```typescript
+import { ASSETS } from "./assets";
+
+const meta = ASSETS.public.image.Direction;
+// meta.path → 'public/image/Direction.png'
+// meta.type → 'png'
+```
+
 ## 示例
 
 ### 基础 CSV 示例
@@ -324,6 +350,42 @@ project/
 ```bash
 config2ts -d ./config -o ./src/types -n config.ts
 ```
+
+## 常见问题
+
+### 如何在 CI/CD 流程中集成？
+
+在 `package.json` 中添加构建脚本，CI 中先安装依赖再执行转换：
+
+```json
+{
+  "scripts": {
+    "build:config": "config2ts -d config -o src/types -n config.ts",
+    "build": "npm run build:config && tsc"
+  }
+}
+```
+
+### 支持 watch 模式（修改配置后自动重新生成）吗？
+
+暂无内置 watch 模式，可借助文件监控工具实现：
+
+```bash
+npx nodemon --ext csv,ini,toml --exec "config2ts -d config -o src/types -n config.ts"
+```
+
+### 支持嵌套数据结构吗？
+
+`Object` / `Object[]` 仅支持扁平的 `key:value` 键值对（值自动推导为 number/boolean/string），不支持对象内再嵌套对象。需要深层嵌套结构时：
+
+- 使用 INI 或 TOML 格式（天然支持嵌套表）
+- 将数据拆分为多个 CSV 文件，通过 `Ref` / `RefEnum` 建立跨表关联
+
+### 生成的代码有类型错误或数据不符合预期怎么办？
+
+1. 留意转换时的警告输出：类型名拼写错误等未识别类型会按 `string` 处理并告警；`Ref` / `RefEnum` 引用值为空也会告警
+2. 检查 CSV 前两行（字段名行、类型行）是否正确；含逗号的字段需用双引号包裹
+3. 生成文件带有 `DO NOT EDIT` 头，每次转换会整体覆盖，请勿在生成文件中手写定制内容
 
 ## 注意事项
 
