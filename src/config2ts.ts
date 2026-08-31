@@ -251,21 +251,24 @@ function normalizeCell(str: string): string {
   return String(str).replace(/\r\n?|\n/g, "").trim();
 }
 
-// Split a semicolon-separated array cell: n semicolons make n+1 slots and every
+// Split a comma-separated primitive-array cell: n commas make n+1 slots and every
 // slot is kept (including an interior or trailing empty one), so parallel arrays
 // stay index-aligned. Empty slots follow the element's own parsing rule
-// ('' for strings/enums, 0 for numbers, {} for objects); null is never emitted.
+// ('' for strings/enums, 0 for numbers); null is never emitted.
 // An empty cell resolves to an empty array.
+// Note: Object[] uses semicolons as element separator (see parseObjectArray),
+// because commas already separate key:value pairs inside an object.
 function splitStringArray(str: string): string[] {
   if (str === "") {
     return [];
   }
-  return str.split(";").map((v) => v.trim());
+  return str.split(",").map((v) => v.trim());
 }
 
-// Object[] uses the same semicolon element separator as other arrays; within an
-// object, commas separate key:value pairs exactly like the Object type, so empty
-// pair segments (e.g. "num:1,,str:a") are ignored. An empty slot between
+// Object[] separates objects with semicolons (commas are reserved for the
+// key:value pairs inside an object, same syntax as the Object type); each
+// semicolon slot is parsed by the same object rule, so stray empty pairs within
+// an object (e.g. "num:1,,str:a") are ignored while an empty object slot between
 // semicolons (e.g. "a:1;;b:2") becomes an empty object placeholder.
 function parseObjectArray(str: string): Record<string, any>[] {
   if (str === "") {
