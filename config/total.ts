@@ -46,7 +46,7 @@ export namespace DataCsv {
             typearray: ['t1'],
             'space field/sub': 'a',
             obj: {num:1,str:'ab'},
-            objarray: [{num:1,str:'a'},{num:2,str:'b'}],
+            objarray: [{num:1},{str:'a'},{}],
         },
         {
             id: '2',
@@ -59,7 +59,7 @@ export namespace DataCsv {
             typearray: ['t1','t2'],
             'space field/sub': 'a',
             obj: {str:'hello',num:2},
-            objarray: [{str:'hi',bool:true},{num:5}],
+            objarray: [{str:'hi'},{},{bool:true}],
         },
         {
             id: '3',
@@ -80,12 +80,12 @@ export namespace DataCsv {
             bool: true,
             num: Infinity,
             mytype: 'type2',
-            stringarray: ['1','b'],
-            numberarray: [1,3],
+            stringarray: ['','1','','b'],
+            numberarray: [0,1,0,3],
             typearray: [],
             'space field/sub': 'c',
             obj: {num:4,bool:true,str:'test'},
-            objarray: [{num:4,bool:false}],
+            objarray: [{num:4},{bool:false}],
         }
     ];
 

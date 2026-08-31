@@ -31,12 +31,12 @@ config2ts -d config -o dist -n csv.ts -a public
 
 * `Number` support Infinity and NaN
 * `Enum` support empty string type
-* `Enum[]` do not include empty string type
+* `Enum[]` union contains every value actually present in the data (including `""` for empty slots)
 * `EnumIndex` will generate index type, and will use `Enum` type to generate interface
 * `Ref` / `RefEnum` reference another csv's Record/type by id
 * `Object` parse `key:value,key:value` format, auto-infer value types (number/boolean/string), generates a dedicated `type` that merges all keys
-* `Object[]` parse `key:value,key:value;key:value,key:value` format (`;` separates objects, `,` separates key-value pairs), empty value generates `[]`, generates a dedicated element `type` with the field typed as `type[]`
-* Array empty-data convention (`String[]`/`Number[]`/`Enum[]`/`RefEnum[...] []`/`Object[]`): an empty cell generates `[]`; empty segments from stray, leading or trailing separators (e.g. `"a,,b"`, `"1,,3"`, `"x:1;;y:2"`) are skipped — no phantom `""`, `0` or `{}` elements
+* `Object[]` parse comma-separated `key:value` slots — each slot becomes one object (`num:1,,str:a,` makes `[{num:1},{},{str:'a'},{}]`), generates a dedicated element `type` merging all keys with the field typed as `type[]`
+* Array convention (`String[]`/`Number[]`/`Enum[]`/`RefEnum[...] []`/`Object[]`): raw cell values are normalized (line breaks removed, whitespace trimmed); an empty cell generates `[]`; otherwise n commas make n+1 slots and every slot is kept (including interior or trailing ones) so parallel arrays stay index-aligned. Empty slots use the type's own zero value — `''` for string/enum/ref-enum, `0` for number, `{}` for objects; `null` is never generated
 * unrecognized field types fall back to `string` and print a warning (check for typos)
 
 ## assets2ts
