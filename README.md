@@ -35,8 +35,8 @@ config2ts -d config -o dist -n csv.ts -a public
 * `EnumIndex` will generate index type, and will use `Enum` type to generate interface
 * `Ref` / `RefEnum` reference another csv's Record/type by id
 * `Object` parse `key:value,key:value` format, auto-infer value types (number/boolean/string), generates a dedicated `type` that merges all keys
-* `Object[]` parse comma-separated `key:value` slots — each slot becomes one object (`num:1,,str:a,` makes `[{num:1},{},{str:'a'},{}]`), generates a dedicated element `type` merging all keys with the field typed as `type[]`
-* Array convention (`String[]`/`Number[]`/`Enum[]`/`RefEnum[...] []`/`Object[]`): raw cell values are normalized (line breaks removed, whitespace trimmed); an empty cell generates `[]`; otherwise n commas make n+1 slots and every slot is kept (including interior or trailing ones) so parallel arrays stay index-aligned. Empty slots use the type's own zero value — `''` for string/enum/ref-enum, `0` for number, `{}` for objects; `null` is never generated
+* `Object[]` uses the same semicolon element separator as other arrays — each semicolon slot becomes one object; within an object, commas separate `key:value` pairs just like the `Object` type, so stray empty pairs are ignored (`num:1,,str:a;num:2` makes `[{num:1,str:'a'},{num:2}]`), generates a dedicated element `type` merging all keys with the field typed as `type[]`
+* Array convention (`String[]`/`Number[]`/`Enum[]`/`RefEnum[...] []`/`Object[]`): raw cell values are normalized (line breaks removed, whitespace trimmed); an empty cell generates `[]`; otherwise elements are separated by `;` and n semicolons make n+1 slots, with every slot kept (including interior or trailing ones) so parallel arrays stay index-aligned. Empty slots use the type's own zero value — `''` for string/enum/ref-enum, `0` for number, `{}` for objects; `null` is never generated
 * unrecognized field types fall back to `string` and print a warning (check for typos)
 
 ## assets2ts
