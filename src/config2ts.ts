@@ -61,20 +61,10 @@ function csv2ts(csvString: string, moduleName: string): string {
           d[k] = parseObjectArray(d[k]) as any;
         } else if (typeof (global as any)[convert[k]] === "function") {
           d[k] = (global as any)[convert[k]](d[k]);
-        } else if (convert[k] === "String[]") {
-          if (d[k] === "") {
-            d[k] = [] as any;
-          } else {
-            d[k] = d[k].trim().split(",").map((v) => v.trim()) as any;
-          }
+        } else if (convert[k] === "String[]" || convert[k] === "Enum[]") {
+          d[k] = splitArrayValues(d[k]) as any;
         } else if (convert[k] === "Number[]") {
-          d[k] = d[k].trim().split(",").map((val) => Number(val)) as any;
-        } else if (convert[k] === "Enum[]") {
-          if (d[k] === "") {
-            d[k] = [] as any;
-          } else {
-            d[k] = d[k].trim().split(",").map((v) => v.trim()) as any;
-          }
+          d[k] = splitArrayValues(d[k]).map((val) => Number(val)) as any;
         } else if (convert[k].startsWith(RefPrefix) && convert[k].endsWith(RefSuffix)) {
           if (d[k] === "") {
             console.warn(`[config2ts] warning: ${moduleName} row ${i} field "${k}" ref value is empty`);
@@ -82,11 +72,7 @@ function csv2ts(csvString: string, moduleName: string): string {
         } else if (parseRefEnum(convert[k])) {
           const refEnum = parseRefEnum(convert[k])!;
           if (refEnum.isArray) {
-            if (d[k] === "") {
-              d[k] = [] as any;
-            } else {
-              d[k] = d[k].trim().split(",").map((v) => v.trim()) as any;
-            }
+            d[k] = splitArrayValues(d[k]) as any;
           } else {
             if (d[k] === "") {
               console.warn(`[config2ts] warning: ${moduleName} row ${i} field "${k}" ref enum value is empty`);
@@ -259,11 +245,21 @@ function parseObject(str: string): Record<string, any> {
 }
 
 function parseObjectArray(str: string): Record<string, any>[] {
-  const trimmed = str.trim();
-  if (trimmed === "") {
-    return [];
-  }
-  return trimmed.split(";").map((part) => parseObject(part));
+  return str
+    .split(";")
+    .map((part) => part.trim())
+    .filter((part) => part !== "")
+    .map((part) => parseObject(part));
+}
+
+// Split a comma-separated array cell, trimming and dropping empty segments
+// so stray/leading/trailing commas never produce phantom elements.
+// An empty cell resolves to an empty array.
+function splitArrayValues(str: string): string[] {
+  return str
+    .split(",")
+    .map((v) => v.trim())
+    .filter((v) => v !== "");
 }
 
 function parseObjectValue(value: string): any {

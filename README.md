@@ -36,6 +36,7 @@ config2ts -d config -o dist -n csv.ts -a public
 * `Ref` / `RefEnum` reference another csv's Record/type by id
 * `Object` parse `key:value,key:value` format, auto-infer value types (number/boolean/string), generates a dedicated `type` that merges all keys
 * `Object[]` parse `key:value,key:value;key:value,key:value` format (`;` separates objects, `,` separates key-value pairs), empty value generates `[]`, generates a dedicated element `type` with the field typed as `type[]`
+* Array empty-data convention (`String[]`/`Number[]`/`Enum[]`/`RefEnum[...] []`/`Object[]`): an empty cell generates `[]`; empty segments from stray, leading or trailing separators (e.g. `"a,,b"`, `"1,,3"`, `"x:1;;y:2"`) are skipped — no phantom `""`, `0` or `{}` elements
 * unrecognized field types fall back to `string` and print a warning (check for typos)
 
 ## assets2ts
