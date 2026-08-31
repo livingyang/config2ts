@@ -35,7 +35,7 @@ config2ts -d config -o dist -n csv.ts -a public
 * `EnumIndex` will generate index type, and will use `Enum` type to generate interface
 * `Ref` / `RefEnum` reference another csv's Record/type by id
 * `Object` parse `key:value,key:value` format, auto-infer value types (number/boolean/string), generates a dedicated `type` that merges all keys
-* `Object[]` separates objects with `;` while commas still separate `key:value` pairs inside each object (same syntax as the `Object` type), e.g. `num:1,,str:a;num:2` makes `[{num:1,str:'a'},{num:2}]`; generates a dedicated element `type` merging all keys with the field typed as `type[]`
+* `Object[]` separates objects with `;` while commas still separate `key:value` pairs inside each object (same syntax as the `Object` type), e.g. `num:1,,str:a;num:2` makes `[{num:1,str:'a'},{num:2}]`, a bare `;` makes `[{},{}]`; generates a dedicated element `type` merging all keys with the field typed as `type[]`
 * Array convention: primitive arrays (`String[]`/`Number[]`/`Enum[]`/`RefEnum[...] []`) separate elements with `,` and `Object[]` separates objects with `;`; raw cell values are normalized (line breaks removed, whitespace trimmed); an empty cell generates `[]`; otherwise n separators make n+1 slots and every slot is kept (including interior or trailing ones) so parallel arrays stay index-aligned. Empty slots use the type's own zero value — `''` for string/enum/ref-enum, `0` for number, `{}` for empty object slots; `null` is never generated
 * unrecognized field types fall back to `string` and print a warning (check for typos)
 

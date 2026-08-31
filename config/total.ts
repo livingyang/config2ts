@@ -72,7 +72,7 @@ export namespace DataCsv {
             typearray: ['t2','t3','t4'],
             'space field/sub': 'b',
             obj: {},
-            objarray: [],
+            objarray: [{},{}],
         },
         {
             id: '4',
