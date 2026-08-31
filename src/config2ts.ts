@@ -10,6 +10,7 @@ const EnumIndexStr = "EnumIndex";
 const EnumArrayString = "Enum[]";
 const IndexStr = "Index";
 const ObjectStr = "Object";
+const ObjectArrayString = "Object[]";
 const RefPrefix = "Ref[";
 const RefSuffix = "]";
 const RefEnumPrefix = "RefEnum[";
@@ -47,12 +48,17 @@ function csv2ts(csvString: string, moduleName: string): string {
         if (parseRefEnum(convert[k])) {
           refEnumFields.push(k);
         }
+        if (!isKnownType(convert[k])) {
+          console.warn(`[config2ts] warning: ${moduleName} field "${k}" has unrecognized type "${convert[k]}", values will be treated as string`);
+        }
       }
       return null;
     } else {
       for (const k in d) {
         if (convert[k] === ObjectStr) {
           d[k] = parseObject(d[k]) as any;
+        } else if (convert[k] === ObjectArrayString) {
+          d[k] = parseObjectArray(d[k]) as any;
         } else if (typeof (global as any)[convert[k]] === "function") {
           d[k] = (global as any)[convert[k]](d[k]);
         } else if (convert[k] === "String[]") {
@@ -128,15 +134,18 @@ function csv2ts(csvString: string, moduleName: string): string {
       const enumValueStrings = enumValues.map((value) => `"${value}"`);
       template += `    export type ${field} = ${enumValueStrings.join(" | ")};\n`;
       template += `    export const ${field}List: ${field}[] = [${enumValueStrings.join(", ")}];\n\n`;
-    } else if (convert[field] == ObjectStr) {
+    } else if (convert[field] == ObjectStr || convert[field] == ObjectArrayString) {
       const keyTypes: Record<string, Set<string>> = {};
+      const isArray = convert[field] == ObjectArrayString;
       for (const row of result) {
-        const objValue = row[field];
-        for (const key in objValue) {
-          if (!keyTypes[key]) {
-            keyTypes[key] = new Set();
+        const objValues = isArray ? row[field] : [row[field]];
+        for (const objValue of objValues) {
+          for (const key in objValue) {
+            if (!keyTypes[key]) {
+              keyTypes[key] = new Set();
+            }
+            keyTypes[key].add(getTypeName(objValue[key]));
           }
-          keyTypes[key].add(getTypeName(objValue[key]));
         }
       }
       template += `    export type ${field} = {\n`;
@@ -165,6 +174,8 @@ function csv2ts(csvString: string, moduleName: string): string {
         fieldType = field + "[]";
       } else if (convert[field] == ObjectStr) {
         fieldType = field;
+      } else if (convert[field] == ObjectArrayString) {
+        fieldType = field + "[]";
       } else if (convert[field].startsWith(RefPrefix) && convert[field].endsWith(RefSuffix)) {
         const refModule = convert[field].slice(RefPrefix.length, -RefSuffix.length);
         const refModuleName = changeCase.pascalCase(refModule);
@@ -247,6 +258,14 @@ function parseObject(str: string): Record<string, any> {
   return result;
 }
 
+function parseObjectArray(str: string): Record<string, any>[] {
+  const trimmed = str.trim();
+  if (trimmed === "") {
+    return [];
+  }
+  return trimmed.split(";").map((part) => parseObject(part));
+}
+
 function parseObjectValue(value: string): any {
   if (value === "true") return true;
   if (value === "false") return false;
@@ -262,6 +281,26 @@ function getTypeName(value: any): string {
   if (typeof value === "number") return "number";
   if (typeof value === "boolean") return "boolean";
   return "string";
+}
+
+function isKnownType(typeStr: string): boolean {
+  if (typeStr === "") {
+    return true;
+  }
+  const knownTypes = [EnumStr, EnumIndexStr, EnumArrayString, IndexStr, ObjectStr, ObjectArrayString, "String[]", "Number[]"];
+  if (knownTypes.includes(typeStr)) {
+    return true;
+  }
+  if (typeStr.startsWith(RefPrefix) && typeStr.endsWith(RefSuffix)) {
+    return true;
+  }
+  if (parseRefEnum(typeStr)) {
+    return true;
+  }
+  if (typeof (global as any)[typeStr] === "function") {
+    return true;
+  }
+  return false;
 }
 
 function parseRefEnum(typeStr: string): { refModule: string; refField: string; isArray: boolean } | null {

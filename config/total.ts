@@ -14,6 +14,12 @@ export namespace DataCsv {
         bool?: boolean;
     };
 
+    export type objarray = {
+        num?: number;
+        str?: string;
+        bool?: boolean;
+    };
+
     export interface Record {
         id: string;
         name: string;
@@ -25,6 +31,7 @@ export namespace DataCsv {
         typearray: typearray[];
         'space field/sub': string;
         obj: obj;
+        objarray: objarray[];
     };
 
     export const List: Record[] = [
@@ -39,6 +46,7 @@ export namespace DataCsv {
             typearray: ['t1'],
             'space field/sub': 'a',
             obj: {num:1,str:'ab'},
+            objarray: [{num:1,str:'a'},{num:2,str:'b'}],
         },
         {
             id: '2',
@@ -51,6 +59,7 @@ export namespace DataCsv {
             typearray: ['t1','t2'],
             'space field/sub': 'a',
             obj: {str:'hello',num:2},
+            objarray: [{str:'hi',bool:true},{num:5}],
         },
         {
             id: '3',
@@ -63,6 +72,7 @@ export namespace DataCsv {
             typearray: ['t2','t3','t4'],
             'space field/sub': 'b',
             obj: {},
+            objarray: [],
         },
         {
             id: '4',
@@ -75,6 +85,7 @@ export namespace DataCsv {
             typearray: [],
             'space field/sub': 'c',
             obj: {num:4,bool:true,str:'test'},
+            objarray: [{num:4,bool:false}],
         }
     ];
 

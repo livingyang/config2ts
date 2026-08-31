@@ -120,6 +120,8 @@ fruit = 2
 | `String[]` | `string[]` | 字符串数组 |
 | `Number[]` | `number[]` | 数字数组 |
 | `Enum[]` | 联合类型数组 | 枚举数组 |
+| `Object` | 对象类型 | 解析 `key:value,key:value` 格式，自动推断值类型 |
+| `Object[]` | 对象数组 | 解析 `key:value;key:value` 格式，`;` 分隔对象，空值为 `[]` |
 
 ### 类型说明
 
@@ -127,6 +129,9 @@ fruit = 2
 - **Enum**: 支持空字符串类型
 - **Enum[]**: 不包含空字符串类型
 - **EnumIndex**: 生成索引类型，使用 Enum 类型生成接口，同时生成 Map
+- **Object**: 单元格格式为 `key:value,key:value`（如 `num:1,str:ab`），值自动推断为 number/boolean/string，跨所有行合并 key 生成专用类型
+- **Object[]**: 单元格格式为 `key:value,key:value;key:value,key:value`，对象之间用 `;` 分隔（对象内仍用 `,` 分隔键值对），空单元格生成空数组 `[]`，跨所有行的数组元素合并 key 生成元素类型，字段类型为 `类型名[]`
+- **未识别类型**: 类型名拼写错误等未识别类型会按 `string` 处理，并在转换时输出警告
 
 ### 生成的结构
 

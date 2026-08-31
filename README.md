@@ -27,6 +27,7 @@ config2ts -d config -o dist -n csv.ts -a public
 | RefEnum    | namespace.type    |
 |  RefEnum[] |  namespace.type[] |
 |   Object   |   type (Record)   |
+|  Object[]  | type[] (Record[]) |
 
 * `Number` support Infinity and NaN
 * `Enum` support empty string type
@@ -34,6 +35,8 @@ config2ts -d config -o dist -n csv.ts -a public
 * `EnumIndex` will generate index type, and will use `Enum` type to generate interface
 * `Ref` / `RefEnum` reference another csv's Record/type by id
 * `Object` parse `key:value,key:value` format, auto-infer value types (number/boolean/string), generates a dedicated `type` that merges all keys
+* `Object[]` parse `key:value,key:value;key:value,key:value` format (`;` separates objects, `,` separates key-value pairs), empty value generates `[]`, generates a dedicated element `type` with the field typed as `type[]`
+* unrecognized field types fall back to `string` and print a warning (check for typos)
 
 ## assets2ts
 

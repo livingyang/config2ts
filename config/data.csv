@@ -1,7 +1,7 @@
-id,name,bool,num,mytype,stringarray,numberarray,typearray,space field/sub,obj
-Index,String,Boolean,Number,Enum,String[],Number[],Enum[],String,Object
-1,xxx,1,111,type1,"1, 2, 3","1, 2, 3",t1,a,"num:1,str:ab"
-2,xxx,,222,type2," a , b",,"t1,  t2",a,"str:hello,num:2"
-3,333,,NaN,,,"1,2","t2, t3, t4",b,
-,,,,,,,,,
-4,444,0,Infinity,type2,",1,,b",",1,,3",,c,"num:4,bool:true,str:test"
+id,name,bool,num,mytype,stringarray,numberarray,typearray,space field/sub,obj,objarray
+Index,String,Boolean,Number,Enum,String[],Number[],Enum[],String,Object,Object[]
+1,xxx,1,111,type1,"1, 2, 3","1, 2, 3",t1,a,"num:1,str:ab","num:1,str:a;num:2,str:b"
+2,xxx,,222,type2," a , b",,"t1,  t2",a,"str:hello,num:2","str:hi,bool:true;num:5"
+3,333,,NaN,,,"1,2","t2, t3, t4",b,,
+,,,,,,,,,,
+4,444,0,Infinity,type2,",1,,b",",1,,3",,c,"num:4,bool:true,str:test","num:4,bool:false"
