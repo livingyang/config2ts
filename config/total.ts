@@ -138,6 +138,100 @@ export const IniFileIni = {
     },
 };
 
+export namespace LangEnCsv {
+
+    export interface Record {
+        id: string;
+        text: string;
+    };
+
+    export const List: Record[] = [
+        {
+            id: 'skill.101.name',
+            text: 'Fireball',
+        },
+        {
+            id: 'skill.101.desc',
+            text: 'Deals {damage} fire damage to an enemy within {range}m.',
+        },
+        {
+            id: 'skill.102.name',
+            text: 'Heal',
+        },
+        {
+            id: 'skill.102.desc',
+            text: 'Restores {heal} HP to a friendly target.',
+        },
+        {
+            id: 'skill.103.name',
+            text: 'Lightning',
+        },
+        {
+            id: 'skill.103.desc',
+            text: 'Deals {damage} thunder damage, chaining up to {chain} targets.',
+        },
+        {
+            id: 'unit.1.name',
+            text: 'Hero One',
+        },
+        {
+            id: 'unit.2.name',
+            text: 'Hero Two',
+        }
+    ];
+
+    export const Map: { [id: string]: Record } = {};
+    for (const v of List) { Map[v.id] = v; };
+
+};
+
+export namespace LangZhCsv {
+
+    export interface Record {
+        id: string;
+        text: string;
+    };
+
+    export const List: Record[] = [
+        {
+            id: 'skill.101.name',
+            text: '火球术',
+        },
+        {
+            id: 'skill.101.desc',
+            text: '对 {range} 米内的敌人造成 {damage} 点火焰伤害。',
+        },
+        {
+            id: 'skill.102.name',
+            text: '治疗术',
+        },
+        {
+            id: 'skill.102.desc',
+            text: '为友方目标恢复 {heal} 点生命值。',
+        },
+        {
+            id: 'skill.103.name',
+            text: '闪电链',
+        },
+        {
+            id: 'skill.103.desc',
+            text: '造成 {damage} 点雷电伤害，最多连锁 {chain} 个目标。',
+        },
+        {
+            id: 'unit.1.name',
+            text: '英雄一号',
+        },
+        {
+            id: 'unit.2.name',
+            text: '英雄二号',
+        }
+    ];
+
+    export const Map: { [id: string]: Record } = {};
+    for (const v of List) { Map[v.id] = v; };
+
+};
+
 export namespace NoIdCsv {
 
     export interface Record {
@@ -186,6 +280,104 @@ export namespace NoIdCsv {
 
 };
 
+export namespace SkillCsv {
+
+    export type kind = "attack" | "support";
+    export const kindList: kind[] = ["attack", "support"];
+
+    export type params = {
+        damage?: number;
+        range?: number;
+        element?: string;
+        heal?: number;
+        target?: string;
+        chain?: number;
+    };
+
+    export interface Record {
+        id: string;
+        name: string;
+        kind: kind;
+        params: params;
+    };
+
+    export const List: Record[] = [
+        {
+            id: '101',
+            name: 'fireball',
+            kind: 'attack',
+            params: {damage:100,range:5,element:'fire'},
+        },
+        {
+            id: '102',
+            name: 'heal',
+            kind: 'support',
+            params: {heal:200,target:'ally'},
+        },
+        {
+            id: '103',
+            name: 'lightning',
+            kind: 'attack',
+            params: {damage:80,range:3,element:'thunder',chain:3},
+        }
+    ];
+
+    export const Map: { [id: string]: Record } = {};
+    for (const v of List) { Map[v.id] = v; };
+
+};
+
+export namespace SkilllevelCsv {
+
+    export interface Record {
+        id: string;
+        skill: SkillCsv.Record;
+        level: number;
+        damage: number;
+        heal: number;
+        manaCost: number;
+    };
+
+    export const List: Record[] = [
+        {
+            id: '1',
+            skill: SkillCsv.Map["101"],
+            level: 1,
+            damage: 100,
+            heal: 0,
+            manaCost: 20,
+        },
+        {
+            id: '2',
+            skill: SkillCsv.Map["101"],
+            level: 2,
+            damage: 150,
+            heal: 0,
+            manaCost: 30,
+        },
+        {
+            id: '3',
+            skill: SkillCsv.Map["102"],
+            level: 1,
+            damage: 0,
+            heal: 200,
+            manaCost: 40,
+        },
+        {
+            id: '4',
+            skill: SkillCsv.Map["103"],
+            level: 1,
+            damage: 80,
+            heal: 0,
+            manaCost: 25,
+        }
+    ];
+
+    export const Map: { [id: string]: Record } = {};
+    for (const v of List) { Map[v.id] = v; };
+
+};
+
 export const TomlFileToml = {
     num: 1,
     str: 'test',
@@ -193,4 +385,30 @@ export const TomlFileToml = {
         book: 1,
         fruit: 2,
     },
+};
+
+export namespace UnitCsv {
+
+    export interface Record {
+        id: string;
+        name: string;
+        skills: SkillCsv.Record[];
+    };
+
+    export const List: Record[] = [
+        {
+            id: '1',
+            name: 'hero1',
+            skills: [SkillCsv.Map["101"],SkillCsv.Map["102"]],
+        },
+        {
+            id: '2',
+            name: 'hero2',
+            skills: [SkillCsv.Map["103"]],
+        }
+    ];
+
+    export const Map: { [id: string]: Record } = {};
+    for (const v of List) { Map[v.id] = v; };
+
 };

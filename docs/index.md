@@ -10,6 +10,7 @@
 - [支持的配置格式](#支持的配置格式)
 - [CSV 字段类型](#csv-字段类型)
 - [引用功能](#引用功能)
+- [常见建模场景](#常见建模场景)
 - [资源索引](#资源索引assets2ts)
 - [示例](#示例)
 - [常见问题](#常见问题)
@@ -292,6 +293,106 @@ export namespace NoIdCsv {
 [config2ts] warning: NoIdCsv row 3 field "dataRecord" ref value is empty
 [config2ts] warning: NoIdCsv row 3 field "myType" ref enum value is empty
 ```
+
+## 常见建模场景
+
+本节场景均可在仓库 [config/](https://github.com/livingyang/config2ts/tree/master/config) 目录找到对应源文件，生成结果合并于 `total.ts`（即测试夹具，始终与最新语法一致）。
+
+### 选型原则：Object[] 还是 Ref[]？
+
+- **内联、私有、一次性**的结构化列表（坐标点、波次参数）→ `Object[]`，数据直接写在单元格里
+- **有身份、要复用、有多组数据**的对象（技能、道具、奖励项）→ 提成独立 CSV 表，用 `Ref` / `Ref[]` 关联，白送类型安全与跨表枚举
+- `Object` 单元格是**扁平**的 `key:value`，不支持嵌套对象/数组值；需要层级就拆表
+
+### 场景一：角色-技能-等级（异构字段 + 多组数值）
+
+需求：每个角色有多个技能；技能之间参数字段不同；同一技能有多组数值（等级）。拆三张表：
+
+**1. 技能表** [skill.csv](https://github.com/livingyang/config2ts/blob/master/config/skill.csv) —— 异构参数收进 `Object` 字段，跨所有技能合并 key，缺失字段自动可选：
+
+```csv
+id,name,kind,params
+Index,String,Enum,Object
+101,fireball,attack,"damage:100,range:5,element:fire"
+102,heal,support,"heal:200,target:ally"
+```
+
+生成类型（火球术没有 `heal`、治疗没有 `damage`，均为可选）：
+
+```typescript
+export type params = {
+    damage?: number; range?: number; element?: string;
+    heal?: number; target?: string;
+};
+```
+
+**2. 等级数值表** [skilllevel.csv](https://github.com/livingyang/config2ts/blob/master/config/skilllevel.csv) —— 每行是"技能 × 一组数值"，用 `Ref[skill.csv]` 关联回技能：
+
+```csv
+id,skill,level,damage,heal,manaCost
+Index,Ref[skill.csv],Number,Number,Number,Number
+1,101,1,100,0,20
+2,101,2,150,0,30
+3,102,1,0,200,40
+```
+
+消费侧按技能分组取数值：
+
+```typescript
+const lv2 = SkilllevelCsv.List.filter(lv => lv.skill === SkillCsv.Map["101"])
+                              .find(lv => lv.level === 2);  // damage 150
+```
+
+> 如果数值是"角色学到的等级不同"而非技能固有成长，再建一张角色-技能关联表（`Ref[unit.csv]` + `Ref[skill.csv]` + `level`），不要在角色表里直接存等级。
+
+**3. 角色表** [unit.csv](https://github.com/livingyang/config2ts/blob/master/config/unit.csv) —— 用 `Ref[skill.csv][]` 引用多个技能：
+
+```csv
+id,name,skills
+Index,String,Ref[skill.csv][]
+1,hero1,"101,102"
+```
+
+生成 `skills: SkillCsv.Record[]`，数据为 `[SkillCsv.Map["101"], SkillCsv.Map["102"]]`，运行时直接拿到技能对象。
+
+> **文件顺序**：被引用的表按文件名需排在引用表之前（工具按文件名排序处理），故命名为 `skill.csv` < `skilllevel.csv` < `unit.csv`。
+
+### 场景二：描述文本本地化（i18n）
+
+原则：**配置表里只放翻译 key 和模板，不放死文本；数值全部走具名占位符，运行时填充。**
+
+每种语言一个 CSV（[lang-en.csv](https://github.com/livingyang/config2ts/blob/master/config/lang-en.csv) / [lang-zh.csv](https://github.com/livingyang/config2ts/blob/master/config/lang-zh.csv)），key 约定 `{类型}.{id}.{字段}`：
+
+```csv
+id,text
+Index,String
+skill.101.name,火球术
+skill.101.desc,"对 {range} 米内的敌人造成 {damage} 点火焰伤害。"
+```
+
+两文件 key 集合保持一致，生成两个形状相同的命名空间（`LangZhCsv.Map[key].text` / `LangEnCsv.Map[key].text`）。运行时一个 helper 完成查表与占位符填充（占位符名与技能 params/等级表字段名一致）：
+
+```typescript
+const tables = { en: LangEnCsv, zh: LangZhCsv } as const;
+let locale: keyof typeof tables = "zh";
+
+export function t(key: string, params?: Record<string, string | number>): string {
+  let tpl = tables[locale].Map[key]?.text ?? key;      // 缺翻译回退到 key
+  if (params) {
+    tpl = tpl.replace(/\{(\w+)\}/g, (_, k) => k in params ? String(params[k]) : "");
+  }
+  return tpl;
+}
+
+t(`skill.${skill.id}.desc`, lv);  // lv 来自 skilllevel 表 → "对 5 米内的敌人造成 150 点火焰伤害。"
+```
+
+约定：
+
+- 同一技能各等级共用一条模板，数值来自等级表；等级专属文案再加 key 层级（如 `skill.101.desc.lv2`）
+- 单元格文本**不能含换行**（会被清洗）；需要换行写字面量 `\n` 由 helper 替换
+- 某语言缺翻译时单元格为空 → `text: ''`，可在 helper 中检测并回退/告警
+- 枚举显示名、道具名、Buff 名等所有面向玩家的文本统一走语言表
 
 ## 资源索引（assets2ts）
 

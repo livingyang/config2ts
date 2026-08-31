@@ -1,0 +1,10 @@
+id,text
+Index,String
+skill.101.name,火球术
+skill.101.desc,"对 {range} 米内的敌人造成 {damage} 点火焰伤害。"
+skill.102.name,治疗术
+skill.102.desc,"为友方目标恢复 {heal} 点生命值。"
+skill.103.name,闪电链
+skill.103.desc,"造成 {damage} 点雷电伤害，最多连锁 {chain} 个目标。"
+unit.1.name,英雄一号
+unit.2.name,英雄二号

@@ -8,8 +8,13 @@ test("config2ts merge csv file list", function () {
     "./config/data.csv",
     "./config/enum-index.csv",
     "./config/ini-file.ini",
+    "./config/lang-en.csv",
+    "./config/lang-zh.csv",
     "./config/no-id.csv",
+    "./config/skill.csv",
+    "./config/skilllevel.csv",
     "./config/toml_file.toml",
+    "./config/unit.csv",
   ])).replace(reg, "");
   const fileContent = fs.readFileSync("./config/total.ts").toString().replace(reg, "");
   expect(generated).toBe(fileContent);

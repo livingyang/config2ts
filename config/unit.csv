@@ -1,0 +1,4 @@
+id,name,skills
+Index,String,Ref[skill.csv][]
+1,hero1,"101,102"
+2,hero2,"103"
