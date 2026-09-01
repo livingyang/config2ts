@@ -7,4 +7,6 @@ skill.102.desc,"为友方目标恢复 {heal} 点生命值。"
 skill.103.name,闪电链
 skill.103.desc,"造成 {damage} 点雷电伤害，最多连锁 {chain} 个目标。"
 unit.1.name,英雄一号
+unit.1.desc,"勇敢的英雄。
+总是率先冲锋。"
 unit.2.name,英雄二号

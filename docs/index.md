@@ -141,7 +141,8 @@ fruit = 2
 - **EnumIndex**: 生成索引类型，使用 Enum 类型生成接口，同时生成 Map
 - **Object**: 单元格格式为 `key:value,key:value`（如 `num:1,str:ab`），值自动推断为 number/boolean/string，跨所有行合并 key 生成专用类型
 - **Object[]**: 对象之间用**分号 `;` 分隔**（逗号留给对象内的 `key:value`，与 `Object` 类型规则相同，多余逗号产生的空键值段忽略）。如 `num:1,,str:a;num:2` 生成 `[{num:1, str:'a'}, {num:2}]`；对象级空槽位（`a:1;;b:2`）按 n+1 规则保留为空对象 `{}`（纯分号 `;` 生成 `[{},{}]`），空单元格为 `[]`；跨所有行合并 key 生成元素类型，字段类型为 `类型名[]`
-- **数组分隔符与空数据约定**: 原始类型数组（`String[]`/`Number[]`/`Enum[]`/`RefEnum[...] []`）用**逗号 `,` 分隔元素**，`Object[]` 用**分号 `;` 分隔对象**（因为逗号已用于对象内键值对）；原始值统一清洗（去除 `\r\n` 等换行符、首尾空格）；空单元格生成 `[]`；非空时 n 个分隔符 → n+1 个槽位，所有槽位（含连续、首尾多余分隔符产生的）全部保留，保证并行数组按下标对齐。空槽位按类型自身零值生成：String/Enum/RefEnum 为 `''`，Number 为 `0`，Object[] 空对象槽为 `{}`，**不生成 `null`**
+- **数组分隔符与空数据约定**: 原始类型数组（`String[]`/`Number[]`/`Enum[]`/`RefEnum[...] []`）用**逗号 `,` 分隔元素**，`Object[]` 用**分号 `;` 分隔对象**（因为逗号已用于对象内键值对）；原始值统一清洗（`\r\n`/`\r` 换行统一为 `\n`、首尾空格去除）；空单元格生成 `[]`；非空时 n 个分隔符 → n+1 个槽位，所有槽位（含连续、首尾多余分隔符产生的）全部保留，保证并行数组按下标对齐。空槽位按类型自身零值生成：String/Enum/RefEnum 为 `''`，Number 为 `0`，Object[] 空对象槽为 `{}`，**不生成 `null`**
+- **换行约定**: `String` 字段保留单元格内的换行（多行文本，CSV 中需用双引号包裹），生成代码中转义为 `\n`；**结构化字段中换行等价于其分隔符**——原始数组/Object 键值对/Template 覆盖项中换行等同逗号（如 `a\nb` → `['a','b']`、`num:1\nstr:x` → `{num:1,str:'x'}`），Object[]/Template[] 中换行等同分号（每行一个对象/模板条目，空行按 n+1 规则为空槽位）；标量字段（Number/Boolean/Enum/EnumIndex/单值 Ref）没有分隔符语义，单元格内含换行会输出警告，请去除换行
 - **未识别类型**: 类型名拼写错误等未识别类型会按 `string` 处理，并在转换时输出警告
 
 ### 生成的结构
@@ -373,6 +374,8 @@ export namespace NoIdCsv {
 
 `Template` 字段同样会对空单元格（`template value is empty`）、基行 id 为空（`template base id is empty`）、模板数组中的空 id 槽位（`template array entry N has an empty base id`）以及游离覆盖段（`template override segment ... is not a key:value pair`，通常是数组值漏写 `[..]` 括号被逗号切碎）输出警告。
 
+标量字段（Number/Boolean/Enum/EnumIndex/单值 Ref/RefEnum）的单元格内含换行时，会输出 `contains a line break inside the cell` 警告——这类字段没有分隔符语义，请去除换行；结构化字段（数组/Object/Template）中的换行是合法分隔符，不会告警。
+
 ## 常见建模场景
 
 本节场景均可在仓库 [config/](https://github.com/livingyang/config2ts/tree/master/config) 目录找到对应源文件，生成结果合并于 `total.ts`（即测试夹具，始终与最新语法一致）。
@@ -469,7 +472,7 @@ t(`skill.${skill.id}.desc`, lv);  // lv 来自 skilllevel 表 → "对 5 米内�
 约定：
 
 - 同一技能各等级共用一条模板，数值来自等级表；等级专属文案再加 key 层级（如 `skill.101.desc.lv2`）
-- 单元格文本**不能含换行**（会被清洗）；需要换行写字面量 `\n` 由 helper 替换
+- **单元格支持真实换行**（Excel 中 Alt+Enter，CSV 中用双引号包裹多行单元格）：`String` 字段换行保留为 `\n`；结构化字段中换行等价于分隔符（数组元素/键值对之间换行等同逗号，模板数组中每行一个模板条目等同分号），策划可以按"每行一条"排版；仅 Number/Boolean/Enum/单值 Ref 等标量字段不支持换行（转换时告警）
 - 某语言缺翻译时单元格为空 → `text: ''`，可在 helper 中检测并回退/告警
 - 枚举显示名、道具名、Buff 名等所有面向玩家的文本统一走语言表
 
@@ -644,3 +647,4 @@ npx nodemon --ext csv,ini,toml --exec "config2ts -d config -o src/types -n confi
 5. **引用顺序**: 被引用的文件需要在引用文件之前被处理（按文件名排序）
 6. **引用路径**: 引用的文件必须在同一目录下
 7. **Template 覆盖项**: 单元格用 `|` 分隔基行 id 与覆盖项（`id|key:value,key:value`），`Template[]` 用 `;` 分隔多个条目；标量值裸写，数组值必须用 `[..]` 包裹（如 `Params:[6,2.07]`），对象值用 `{..}` 整体替换；覆盖字段为顶层平铺，不支持点路径深层覆盖；转换期不校验目标表字段，键名或值类型有误在 tsc 编译期报错
+8. **换行**: `String` 字段换行保留为 `\n`；结构化字段（数组/Object/Object[]/Template/Template[]）中换行等价于对应分隔符（逗号或分号），支持"每行一条"排版，空行按 n+1 规则成为空槽；标量字段（Number/Boolean/Enum/单值 Ref）含换行时转换会告警，需去除；多行单元格在 CSV 中需用双引号包裹

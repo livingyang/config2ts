@@ -86,6 +86,19 @@ export namespace DataCsv {
             'space field/sub': 'c',
             obj: {num:4,bool:true,str:'test'},
             objarray: [{num:4,bool:false}],
+        },
+        {
+            id: '5',
+            name: '555',
+            bool: true,
+            num: 555,
+            mytype: 'type1',
+            stringarray: ['a','b'],
+            numberarray: [1,2],
+            typearray: ['t3'],
+            'space field/sub': 'c',
+            obj: {num:1,str:'m'},
+            objarray: [{num:1},{num:2}],
         }
     ];
 
@@ -175,6 +188,10 @@ export namespace LangEnCsv {
             text: 'Hero One',
         },
         {
+            id: 'unit.1.desc',
+            text: 'A brave hero.\nCharges into battle first.',
+        },
+        {
             id: 'unit.2.name',
             text: 'Hero Two',
         }
@@ -220,6 +237,10 @@ export namespace LangZhCsv {
         {
             id: 'unit.1.name',
             text: '英雄一号',
+        },
+        {
+            id: 'unit.1.desc',
+            text: '勇敢的英雄。\n总是率先冲锋。',
         },
         {
             id: 'unit.2.name',
@@ -269,7 +290,7 @@ export namespace NoIdCsv {
             typeArr: [],
             enumIndexRecord: EnumIndexCsv.Map["222"],
             recordArr: [],
-            tpl: DataCsv.Map["2"],
+            tpl: {...DataCsv.Map["2"],mytype:'type2',obj:{str:'hi',num:9}},
             tplArr: [{...DataCsv.Map["3"],mytype:'type2',obj:{str:'hi',num:9}}],
         },
         {

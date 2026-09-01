@@ -7,4 +7,6 @@ skill.102.desc,"Restores {heal} HP to a friendly target."
 skill.103.name,Lightning
 skill.103.desc,"Deals {damage} thunder damage, chaining up to {chain} targets."
 unit.1.name,Hero One
+unit.1.desc,"A brave hero.
+Charges into battle first."
 unit.2.name,Hero Two
