@@ -130,6 +130,8 @@ fruit = 2
 | `Ref[file][]` | `表名.Record[]` | 引用数组，逗号分隔多个 Index，生成 `[表名.Map["id"],...]` |
 | `RefEnum[file.field]` | `表名.字段名` | 引用其他表的枚举字段 |
 | `RefEnum[file.field][]` | `表名.字段名[]` | 引用其他表的枚举数组 |
+| `Template[file]` | `表名.Record` | 模板继承：以目标表一行为原型并覆盖部分字段，单元格 `id\|key:value,...`，无覆盖项时等同 `Ref[file]` |
+| `Template[file][]` | `表名.Record[]` | 模板数组，分号 `;` 分隔多个模板条目（同 `Object[]`） |
 
 ### 类型说明
 
@@ -255,6 +257,62 @@ export interface Record {
 };
 ```
 
+### Template - 模板继承（引用整行并覆盖字段）
+
+使用 `Template[文件名]` 可以引用其他 CSV 的一行作为"原型"，再覆盖其中部分字段，适合"基础配置 + 少量变体"场景（如精英怪物、强化道具），避免整行复制。
+
+**语法：** 单元格为 `<基行Index>|<key>:<value>,<key>:<value>`——`|` 前是基行 id（与 `Ref` 的值含义相同），`|` 后是覆盖项，写法与 `Object` 一致（逗号分隔 `key:value`，值自动推断 number/boolean/string）。没有覆盖项时省略 `|` 及之后内容即可，此时与 `Ref` 完全等价。
+```csv
+base
+Template[skill.csv]
+101|damage:150,range:8
+102
+```
+
+**生成的代码：** 运行时展开为对象 spread（不修改基行数据），字段类型就是目标表的 `Record`：
+```typescript
+export interface Record {
+    base: SkillCsv.Record;
+};
+
+export const List: Record[] = [
+    {
+        base: { ...SkillCsv.Map["101"], damage: 150, range: 8 },
+    },
+    {
+        base: SkillCsv.Map["102"],   // 无覆盖项，输出与 Ref 一致
+    },
+];
+```
+
+**类型安全：** 覆盖字段名拼错、值类型不符、枚举字段写成非法值都会在 tsc 编译期报错；空单元格、基行 id 为空（如 `|damage:1`）会在转换时输出警告。
+
+> 覆盖仅支持**顶层平铺字段**（与 `Object` 的 flat 语法一致，不支持点路径深层覆盖）；目标表必须有 `Index`/`EnumIndex`（即生成了 `Map`）；被引用表的文件名排序需在引用表之前——以上约束与 `Ref` 相同。
+
+### Template[] - 模板数组
+
+使用 `Template[文件名][]` 可以在一个单元格内写多个模板条目，条目之间用**分号 `;` 分隔**（与 `Object[]` 的元素分隔符一致），每个条目内部规则与单个 `Template` 相同：
+```csv
+rewards
+Template[item.csv][]
+"1001|damage:200;1002|count:5;1003"
+```
+
+**生成的代码：**
+```typescript
+export interface Record {
+    rewards: ItemCsv.Record[];
+};
+
+export const List: Record[] = [
+    {
+        rewards: [{ ...ItemCsv.Map["1001"], damage: 200 }, { ...ItemCsv.Map["1002"], count: 5 }, ItemCsv.Map["1003"]],
+    },
+];
+```
+
+> 空单元格生成 `[]`；n 个分号保持 n+1 个槽位（与其他数组一致），基行 id 为空的槽位（如 `1001|x:1;;1003` 中间的空段）会输出警告。
+
 ### 引用示例
 
 ```csv
@@ -293,6 +351,8 @@ export namespace NoIdCsv {
 [config2ts] warning: NoIdCsv row 3 field "dataRecord" ref value is empty
 [config2ts] warning: NoIdCsv row 3 field "myType" ref enum value is empty
 ```
+
+`Template` 字段同样会对空单元格（`template value is empty`）、基行 id 为空（`template base id is empty`）以及模板数组中的空 id 槽位（`template array entry N has an empty base id`）输出警告。
 
 ## 常见建模场景
 
@@ -393,6 +453,40 @@ t(`skill.${skill.id}.desc`, lv);  // lv 来自 skilllevel 表 → "对 5 米内�
 - 单元格文本**不能含换行**（会被清洗）；需要换行写字面量 `\n` 由 helper 替换
 - 某语言缺翻译时单元格为空 → `text: ''`，可在 helper 中检测并回退/告警
 - 枚举显示名、道具名、Buff 名等所有面向玩家的文本统一走语言表
+
+### 场景三：基础行 + 变体（Template 模板继承）
+
+需求：大量配置行只有少数字段不同（普通/精英/首领怪物、强化前后的道具）。把公共配置放在基础表，变体行用 `Template` 引用基础行并只写差异字段，避免整行复制后改漏：
+
+```csv
+# monster.csv —— 基础怪物表
+id,name,hp,damage
+Index,String,Number,Number
+m1,goblin,100,10
+m2,orc,300,25
+```
+
+```csv
+# monsterelite.csv —— 变体表（文件名排序在基础表之后）
+id,name,base
+Index,String,Template[monster.csv]
+e1,goblin-elite,"m1|hp:250,damage:20"
+b1,orc-boss,"m2|hp:2000,damage:80"
+```
+
+生成的 `base` 字段类型为 `MonsterCsv.Record`，运行时是 `{ ...MonsterCsv.Map["m1"], hp: 250, damage: 20 }`——基行不被修改，变体拥有完整字段，消费侧无需区分"原型"和"变体"：
+
+```typescript
+for (const v of MonstereliteCsv.List) {
+  console.log(v.name, v.base.hp, v.base.damage);  // 字段与基础表完全一致
+}
+```
+
+约定：
+
+- 变体只覆盖**顶层平铺字段**；差异本身是一组有身份、可复用的数据（技能、掉落项）时仍应拆表用 `Ref`
+- 一行需要挂多个变体对象时用 `Template[file][]`（`;` 分隔多个条目）
+- 覆盖字段名拼错或值类型写错会在 tsc 编译期报错，不用等运行时
 
 ## 资源索引（assets2ts）
 
@@ -530,3 +624,4 @@ npx nodemon --ext csv,ini,toml --exec "config2ts -d config -o src/types -n confi
 4. **空行**: CSV 中的空行会被过滤掉（有 Index 字段时）
 5. **引用顺序**: 被引用的文件需要在引用文件之前被处理（按文件名排序）
 6. **引用路径**: 引用的文件必须在同一目录下
+7. **Template 覆盖项**: 单元格用 `|` 分隔基行 id 与覆盖项（`id|key:value,key:value`），`Template[]` 用 `;` 分隔多个条目；覆盖字段为顶层平铺，不支持点路径深层覆盖；转换期不校验目标表字段，键名或值类型有误在 tsc 编译期报错

@@ -243,6 +243,8 @@ export namespace NoIdCsv {
         typeArr: DataCsv.typearray[];
         enumIndexRecord: EnumIndexCsv.Record;
         recordArr: DataCsv.Record[];
+        tpl: DataCsv.Record;
+        tplArr: DataCsv.Record[];
     };
 
     export const List: Record[] = [
@@ -255,6 +257,8 @@ export namespace NoIdCsv {
             typeArr: ['t1','t2'],
             enumIndexRecord: EnumIndexCsv.Map["111"],
             recordArr: [DataCsv.Map["1"],DataCsv.Map["2"]],
+            tpl: {...DataCsv.Map["1"],num:999,bool:true},
+            tplArr: [{...DataCsv.Map["1"],num:10,bool:true},{...DataCsv.Map["2"],name:'yyy'}],
         },
         {
             name: 'xxx',
@@ -265,6 +269,8 @@ export namespace NoIdCsv {
             typeArr: [],
             enumIndexRecord: EnumIndexCsv.Map["222"],
             recordArr: [],
+            tpl: DataCsv.Map["2"],
+            tplArr: [{...DataCsv.Map["3"],mytype:'type2'}],
         },
         {
             name: '333',
@@ -275,6 +281,8 @@ export namespace NoIdCsv {
             typeArr: [],
             enumIndexRecord: EnumIndexCsv.Map["333"],
             recordArr: [DataCsv.Map["3"]],
+            tpl: {...DataCsv.Map["4"],name:'zzz'},
+            tplArr: [DataCsv.Map["4"]],
         }
     ];
 

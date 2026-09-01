@@ -1,5 +1,5 @@
-name,bool,num,dataRecord,myType,typeArr,enumIndexRecord,recordArr
-String,Boolean,Number,Ref[data.csv],RefEnum[data.csv.mytype],RefEnum[data.csv.typearray][],Ref[enum-index.csv],Ref[data.csv][]
-"xxx",1,111,1,type1,"t1, t2",111,"1,2"
-"xxx",,222,2,type2,,222,
-333,,,,,,333,"3"
+name,bool,num,dataRecord,myType,typeArr,enumIndexRecord,recordArr,tpl,tplArr
+String,Boolean,Number,Ref[data.csv],RefEnum[data.csv.mytype],RefEnum[data.csv.typearray][],Ref[enum-index.csv],Ref[data.csv][],Template[data.csv],Template[data.csv][]
+"xxx",1,111,1,type1,"t1, t2",111,"1,2","1|num:999,bool:true","1|num:10,bool:true;2|name:yyy"
+"xxx",,222,2,type2,,222,,2,"3|mytype:type2"
+333,,,,,,333,"3",4|name:zzz,4
