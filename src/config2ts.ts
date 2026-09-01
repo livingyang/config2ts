@@ -297,10 +297,13 @@ function parseObject(str: string): Record<string, any> {
   return result;
 }
 
-// Normalize a raw cell value: drop line-break artifacts (e.g. Excel/CSV \r\n)
-// and surrounding whitespace so all downstream parsing sees clean text.
+// Normalize a raw cell value: convert CRLF/CR line breaks to LF and trim
+// surrounding whitespace. Line feeds inside a quoted cell are intentional
+// (multi-line cells commonly use LF as their entry separator, e.g. one effect
+// per line), so they must be preserved — only the Windows/old-Mac line-break
+// variants are unified to LF.
 function normalizeCell(str: string): string {
-  return String(str).replace(/\r\n?|\n/g, "").trim();
+  return String(str).replace(/\r\n?/g, "\n").trim();
 }
 
 // Split a comma-separated primitive-array cell: n commas make n+1 slots and every

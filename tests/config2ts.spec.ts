@@ -1,4 +1,6 @@
 import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { GetTsStringFromFileList } from "../src/config2ts";
 
 const reg = /[\t\r\f\n\s]*/g;
@@ -18,4 +20,30 @@ test("config2ts merge csv file list", function () {
   ])).replace(reg, "");
   const fileContent = fs.readFileSync("./config/total.ts").toString().replace(reg, "");
   expect(generated).toBe(fileContent);
+});
+
+// A quoted CSV cell may legitimately span multiple lines (e.g. one effect per
+// line). Line feeds are the entry separator and must be preserved; CRLF/CR
+// should only be normalized to LF, never stripped.
+test("multiline quoted cell keeps LF line breaks (CRLF normalized to LF)", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const csvPath = path.join(tmpDir, "multi.csv");
+  // Effects cell: LF-separated entries on row 1, CRLF-separated on row 2.
+  fs.writeFileSync(
+    csvPath,
+    [
+      "Name,Effects",
+      "String,String",
+      '"a","+1 Max HP\n+2 Armor"',
+      '"b","+3 Luck\r\n+4 Speed\r"',
+    ].join("\n"),
+  );
+  const generated = GetTsStringFromFileList([csvPath]);
+  // LF separators must survive so downstream can split lines into entries.
+  expect(generated).toContain("'+1 Max HP\\n+2 Armor'");
+  // CRLF/CR are normalized to LF (entries stay separated), not concatenated.
+  expect(generated).toContain("'+3 Luck\\n+4 Speed'");
+  expect(generated).not.toContain("HP+2");
+  expect(generated).not.toContain("Luck+4");
+  fs.rmSync(tmpDir, { recursive: true, force: true });
 });
