@@ -257,8 +257,8 @@ export namespace NoIdCsv {
             typeArr: ['t1','t2'],
             enumIndexRecord: EnumIndexCsv.Map["111"],
             recordArr: [DataCsv.Map["1"],DataCsv.Map["2"]],
-            tpl: {...DataCsv.Map["1"],num:999,bool:true},
-            tplArr: [{...DataCsv.Map["1"],num:10,bool:true},{...DataCsv.Map["2"],name:'yyy'}],
+            tpl: {...DataCsv.Map["1"],num:999,numberarray:[10,20]},
+            tplArr: [{...DataCsv.Map["1"],num:10,bool:true},{...DataCsv.Map["2"],name:'yyy',stringarray:['p','q']}],
         },
         {
             name: 'xxx',
@@ -270,7 +270,7 @@ export namespace NoIdCsv {
             enumIndexRecord: EnumIndexCsv.Map["222"],
             recordArr: [],
             tpl: DataCsv.Map["2"],
-            tplArr: [{...DataCsv.Map["3"],mytype:'type2'}],
+            tplArr: [{...DataCsv.Map["3"],mytype:'type2',obj:{str:'hi',num:9}}],
         },
         {
             name: '333',

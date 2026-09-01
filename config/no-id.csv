@@ -1,5 +1,5 @@
 name,bool,num,dataRecord,myType,typeArr,enumIndexRecord,recordArr,tpl,tplArr
 String,Boolean,Number,Ref[data.csv],RefEnum[data.csv.mytype],RefEnum[data.csv.typearray][],Ref[enum-index.csv],Ref[data.csv][],Template[data.csv],Template[data.csv][]
-"xxx",1,111,1,type1,"t1, t2",111,"1,2","1|num:999,bool:true","1|num:10,bool:true;2|name:yyy"
-"xxx",,222,2,type2,,222,,2,"3|mytype:type2"
+"xxx",1,111,1,type1,"t1, t2",111,"1,2","1|num:999,numberarray:[10,20]","1|num:10,bool:true;2|name:yyy,stringarray:[p,q]"
+"xxx",,222,2,type2,,222,,2,"3|mytype:type2,obj:{str:hi,num:9}"
 333,,,,,,333,"3",4|name:zzz,4

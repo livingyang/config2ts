@@ -130,7 +130,7 @@ fruit = 2
 | `Ref[file][]` | `表名.Record[]` | 引用数组，逗号分隔多个 Index，生成 `[表名.Map["id"],...]` |
 | `RefEnum[file.field]` | `表名.字段名` | 引用其他表的枚举字段 |
 | `RefEnum[file.field][]` | `表名.字段名[]` | 引用其他表的枚举数组 |
-| `Template[file]` | `表名.Record` | 模板继承：以目标表一行为原型并覆盖部分字段，单元格 `id\|key:value,...`，无覆盖项时等同 `Ref[file]` |
+| `Template[file]` | `表名.Record` | 模板继承：以目标表一行为原型并覆盖部分字段，单元格 `id\|key:value,...`，数组/对象值用 `[..]`/`{..}` 包裹，无覆盖项时等同 `Ref[file]` |
 | `Template[file][]` | `表名.Record[]` | 模板数组，分号 `;` 分隔多个模板条目（同 `Object[]`） |
 
 ### 类型说明
@@ -261,13 +261,26 @@ export interface Record {
 
 使用 `Template[文件名]` 可以引用其他 CSV 的一行作为"原型"，再覆盖其中部分字段，适合"基础配置 + 少量变体"场景（如精英怪物、强化道具），避免整行复制。
 
-**语法：** 单元格为 `<基行Index>|<key>:<value>,<key>:<value>`——`|` 前是基行 id（与 `Ref` 的值含义相同），`|` 后是覆盖项，写法与 `Object` 一致（逗号分隔 `key:value`，值自动推断 number/boolean/string）。没有覆盖项时省略 `|` 及之后内容即可，此时与 `Ref` 完全等价。
+**语法：** 单元格为 `<基行Index>|<key>:<value>,<key>:<value>`——`|` 前是基行 id（与 `Ref` 的值含义相同），`|` 后是覆盖项，逗号分隔多个 `key:value`。没有覆盖项时省略 `|` 及之后内容即可，此时与 `Ref` 完全等价。
+
+覆盖值支持三种形态（括号写法与生成的 TypeScript 语法一致，括号内的逗号不会被当作键值对分隔符）：
+
+| 目标字段类型 | 覆盖值写法 | 示例 |
+| :--- | :--- | :--- |
+| 标量（Number/Boolean/String/Enum） | 裸值 | `damage:150`、`kind:attack` |
+| 数组（Number[]/String[]/Enum[] 等） | `[v1,v2,...]` | `Params:[6,2.07]` |
+| 对象（Object，整体替换） | `{k:v,k:v}` | `params:{damage:100,range:5}` |
+
 ```csv
 base
 Template[skill.csv]
 101|damage:150,range:8
-102
+102|params:{heal:500,target:ally}
+103|Params:[6,2.07]
+104
 ```
+
+> 注意数组值**必须加方括号**：写 `Params:6,2.07` 会被逗号切碎（只取到 `Params:6`，`2.07` 成为无键名的游离段），转换时会输出警告提示改用 `Params:[6,2.07]`。
 
 **生成的代码：** 运行时展开为对象 spread（不修改基行数据），字段类型就是目标表的 `Record`：
 ```typescript
@@ -280,14 +293,20 @@ export const List: Record[] = [
         base: { ...SkillCsv.Map["101"], damage: 150, range: 8 },
     },
     {
-        base: SkillCsv.Map["102"],   // 无覆盖项，输出与 Ref 一致
+        base: { ...SkillCsv.Map["102"], params: { heal: 500, target: 'ally' } },
+    },
+    {
+        base: { ...SkillCsv.Map["103"], Params: [6, 2.07] },
+    },
+    {
+        base: SkillCsv.Map["104"],   // 无覆盖项，输出与 Ref 一致
     },
 ];
 ```
 
-**类型安全：** 覆盖字段名拼错、值类型不符、枚举字段写成非法值都会在 tsc 编译期报错；空单元格、基行 id 为空（如 `|damage:1`）会在转换时输出警告。
+**类型安全：** 覆盖字段名拼错、值类型不符（如数组字段漏写括号变成标量）、枚举字段写成非法值都会在 tsc 编译期报错；空单元格、基行 id 为空（如 `|damage:1`）、游离的覆盖段都会在转换时输出警告。
 
-> 覆盖仅支持**顶层平铺字段**（与 `Object` 的 flat 语法一致，不支持点路径深层覆盖）；目标表必须有 `Index`/`EnumIndex`（即生成了 `Map`）；被引用表的文件名排序需在引用表之前——以上约束与 `Ref` 相同。
+> 覆盖项写在**顶层字段**上（不支持点路径深层覆盖）；`{...}` 对象值与 `Object` 类型一样只支持扁平 `key:value`（不支持对象内再嵌套数组/对象）；目标表必须有 `Index`/`EnumIndex`（即生成了 `Map`，EnumIndex 表以枚举值为 id）；被引用表的文件名排序需在引用表之前——以上约束与 `Ref` 相同。
 
 ### Template[] - 模板数组
 
@@ -352,7 +371,7 @@ export namespace NoIdCsv {
 [config2ts] warning: NoIdCsv row 3 field "myType" ref enum value is empty
 ```
 
-`Template` 字段同样会对空单元格（`template value is empty`）、基行 id 为空（`template base id is empty`）以及模板数组中的空 id 槽位（`template array entry N has an empty base id`）输出警告。
+`Template` 字段同样会对空单元格（`template value is empty`）、基行 id 为空（`template base id is empty`）、模板数组中的空 id 槽位（`template array entry N has an empty base id`）以及游离覆盖段（`template override segment ... is not a key:value pair`，通常是数组值漏写 `[..]` 括号被逗号切碎）输出警告。
 
 ## 常见建模场景
 
@@ -624,4 +643,4 @@ npx nodemon --ext csv,ini,toml --exec "config2ts -d config -o src/types -n confi
 4. **空行**: CSV 中的空行会被过滤掉（有 Index 字段时）
 5. **引用顺序**: 被引用的文件需要在引用文件之前被处理（按文件名排序）
 6. **引用路径**: 引用的文件必须在同一目录下
-7. **Template 覆盖项**: 单元格用 `|` 分隔基行 id 与覆盖项（`id|key:value,key:value`），`Template[]` 用 `;` 分隔多个条目；覆盖字段为顶层平铺，不支持点路径深层覆盖；转换期不校验目标表字段，键名或值类型有误在 tsc 编译期报错
+7. **Template 覆盖项**: 单元格用 `|` 分隔基行 id 与覆盖项（`id|key:value,key:value`），`Template[]` 用 `;` 分隔多个条目；标量值裸写，数组值必须用 `[..]` 包裹（如 `Params:[6,2.07]`），对象值用 `{..}` 整体替换；覆盖字段为顶层平铺，不支持点路径深层覆盖；转换期不校验目标表字段，键名或值类型有误在 tsc 编译期报错
