@@ -737,8 +737,101 @@ export function GetTsString(filePath: string): string {
   }
 }
 
+// Collect the config file names a CSV references from its type row
+// (Ref[file], RefEnum[file.field], Template[file] and their array forms).
+// ini/toml files never reference other config tables.
+function collectCsvReferences(filePath: string): string[] {
+  if (GetFileExt(filePath) !== "csv") {
+    return [];
+  }
+  let fileString = fs.readFileSync(filePath).toString();
+  if (fileString.charAt(0) === "\uFEFF") {
+    fileString = fileString.substr(1);
+  }
+  const references: string[] = [];
+  csvParse(fileString, function (d: Record<string, string>, i: number) {
+    if (i === 0) {
+      for (const k in d) {
+        const typeStr = d[k];
+        const ref = parseRef(typeStr);
+        const refEnum = parseRefEnum(typeStr);
+        const template = parseTemplate(typeStr);
+        const target = ref ? ref.refModule : refEnum ? refEnum.refModule : template ? template.refModule : null;
+        if (target && !references.includes(target)) {
+          references.push(target);
+        }
+      }
+    }
+    return null;
+  });
+  return references;
+}
+
+// Order files so every referenced table is emitted before the table that
+// references it (a referenced namespace must exist when the referencing
+// table's data initializes), so authors no longer need filename tricks (e.g.
+// an "!" prefix) to control order. Files without a dependency relation keep
+// their alphabetical order. References to missing files and circular
+// references are reported; a cycle is broken at the back edge so output is
+// still generated (the runtime data still needs the cycle fixed by hand).
+function sortFilesByReferences(fileList: string[]): string[] {
+  const ordered = fileList.slice().sort((a, b) => {
+    const baseA = path.basename(a);
+    const baseB = path.basename(b);
+    return baseA < baseB ? -1 : baseA > baseB ? 1 : 0;
+  });
+  const fileByBase = new Map<string, string>();
+  for (const filePath of ordered) {
+    fileByBase.set(path.basename(filePath), filePath);
+  }
+  const depsByBase = new Map<string, string[]>();
+  for (const filePath of ordered) {
+    const base = path.basename(filePath);
+    const deps = collectCsvReferences(filePath);
+    depsByBase.set(base, deps);
+    for (const dep of deps) {
+      if (!fileByBase.has(dep)) {
+        console.warn(`[config2ts] warning: ${base} references "${dep}" but no config file with that name was found in the config directory`);
+      }
+    }
+  }
+  const sorted: string[] = [];
+  // 0 = unvisited, 1 = visiting (on the current DFS trail), 2 = done
+  const state = new Map<string, number>();
+  const reportedCycles = new Set<string>();
+  function visit(base: string, trail: string[]): void {
+    const current = state.get(base) ?? 0;
+    if (current === 2) {
+      return;
+    }
+    if (current === 1) {
+      const cycleStart = trail.indexOf(base);
+      const cycleKey = trail.slice(cycleStart).concat(base).join(" -> ");
+      if (!reportedCycles.has(cycleKey)) {
+        reportedCycles.add(cycleKey);
+        console.warn(`[config2ts] warning: circular table reference detected: ${cycleKey}; tables in the cycle may reference an undefined namespace at runtime, please break the reference cycle`);
+      }
+      return;
+    }
+    state.set(base, 1);
+    trail.push(base);
+    for (const dep of depsByBase.get(base) ?? []) {
+      if (fileByBase.has(dep)) {
+        visit(dep, trail);
+      }
+    }
+    trail.pop();
+    state.set(base, 2);
+    sorted.push(fileByBase.get(base)!);
+  }
+  for (const filePath of ordered) {
+    visit(path.basename(filePath), []);
+  }
+  return sorted;
+}
+
 export function GetTsStringFromFileList(fileList: string[]): string {
-  return fileList
+  return sortFilesByReferences(fileList)
     .map(function (filePath: string) {
       return GetTsString(filePath);
     })

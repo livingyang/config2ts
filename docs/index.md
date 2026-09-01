@@ -307,7 +307,7 @@ export const List: Record[] = [
 
 **类型安全：** 覆盖字段名拼错、值类型不符（如数组字段漏写括号变成标量）、枚举字段写成非法值都会在 tsc 编译期报错；空单元格、基行 id 为空（如 `|damage:1`）、游离的覆盖段都会在转换时输出警告。
 
-> 覆盖项写在**顶层字段**上（不支持点路径深层覆盖）；`{...}` 对象值与 `Object` 类型一样只支持扁平 `key:value`（不支持对象内再嵌套数组/对象）；目标表必须有 `Index`/`EnumIndex`（即生成了 `Map`，EnumIndex 表以枚举值为 id）；被引用表的文件名排序需在引用表之前——以上约束与 `Ref` 相同。
+> 覆盖项写在**顶层字段**上（不支持点路径深层覆盖）；`{...}` 对象值与 `Object` 类型一样只支持扁平 `key:value`（不支持对象内再嵌套数组/对象）；目标表必须有 `Index`/`EnumIndex`（即生成了 `Map`，EnumIndex 表以枚举值为 id）；表的输出顺序由引用关系自动排列，无需手工调整文件名——以上约束与 `Ref` 相同。
 
 ### Template[] - 模板数组
 
@@ -376,6 +376,11 @@ export namespace NoIdCsv {
 
 标量字段（Number/Boolean/Enum/EnumIndex/单值 Ref/RefEnum）的单元格内含换行时，会输出 `contains a line break inside the cell` 警告——这类字段没有分隔符语义，请去除换行；结构化字段（数组/Object/Template）中的换行是合法分隔符，不会告警。
 
+引用关系问题也会在合并扫描阶段告警：
+
+- **循环引用**：`circular table reference detected: a.csv -> b.csv -> a.csv`——环路上的表运行时可能引用到 undefined 的 namespace，需手工打断循环（去掉其中一个引用或拆表）
+- **引用文件不存在**：`x.csv references "y.csv" but no config file with that name was found`——检查文件名拼写与扩展名
+
 ## 常见建模场景
 
 本节场景均可在仓库 [config/](https://github.com/livingyang/config2ts/tree/master/config) 目录找到对应源文件，生成结果合并于 `total.ts`（即测试夹具，始终与最新语法一致）。
@@ -437,7 +442,7 @@ Index,String,Ref[skill.csv][]
 
 生成 `skills: SkillCsv.Record[]`，数据为 `[SkillCsv.Map["101"], SkillCsv.Map["102"]]`，运行时直接拿到技能对象。
 
-> **文件顺序**：被引用的表按文件名需排在引用表之前（工具按文件名排序处理），故命名为 `skill.csv` < `skilllevel.csv` < `unit.csv`。
+> **文件顺序**：工具会扫描所有 `Ref`/`RefEnum`/`Template` 引用并自动做拓扑排序——被引用的表总是输出在引用表之前，文件名不再需要手工排序（旧的 `!` 前缀等技巧已无必要）；无引用关系的表保持文件名字典序。检测到循环引用（A→B→A）时会输出告警并指出环路，需要手工打断循环。
 
 ### 场景二：描述文本本地化（i18n）
 
@@ -489,7 +494,7 @@ m2,orc,300,25
 ```
 
 ```csv
-# monsterelite.csv —— 变体表（文件名排序在基础表之后）
+# monsterelite.csv —— 变体表（输出顺序由引用关系自动排列）
 id,name,base
 Index,String,Template[monster.csv]
 e1,goblin-elite,"m1|hp:250,damage:20"
@@ -644,7 +649,7 @@ npx nodemon --ext csv,ini,toml --exec "config2ts -d config -o src/types -n confi
 2. **命名空间**: 每个配置文件会生成独立的 namespace，名称为文件名的 PascalCase 形式
 3. **BOM 支持**: 自动处理带 BOM 的 UTF-8 文件
 4. **空行**: CSV 中的空行会被过滤掉（有 Index 字段时）
-5. **引用顺序**: 被引用的文件需要在引用文件之前被处理（按文件名排序）
+5. **引用顺序**: 工具扫描 `Ref`/`RefEnum`/`Template` 引用关系并自动拓扑排序，被引用表保证输出在引用表之前；无引用关系的表按文件名字典序排列，无需手工命名控制顺序
 6. **引用路径**: 引用的文件必须在同一目录下
 7. **Template 覆盖项**: 单元格用 `|` 分隔基行 id 与覆盖项（`id|key:value,key:value`），`Template[]` 用 `;` 分隔多个条目；标量值裸写，数组值必须用 `[..]` 包裹（如 `Params:[6,2.07]`），对象值用 `{..}` 整体替换；覆盖字段为顶层平铺，不支持点路径深层覆盖；转换期不校验目标表字段，键名或值类型有误在 tsc 编译期报错
 8. **换行**: `String` 字段换行保留为 `\n`；结构化字段（数组/Object/Object[]/Template/Template[]）中换行等价于对应分隔符（逗号或分号），支持"每行一条"排版，空行按 n+1 规则成为空槽；标量字段（Number/Boolean/Enum/单值 Ref）含换行时转换会告警，需去除；多行单元格在 CSV 中需用双引号包裹
