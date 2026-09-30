@@ -653,3 +653,4 @@ npx nodemon --ext csv,ini,toml --exec "config2ts -d config -o src/types -n confi
 6. **引用路径**: 引用的文件必须在同一目录下
 7. **Template 覆盖项**: 单元格用 `|` 分隔基行 id 与覆盖项（`id|key:value,key:value`），`Template[]` 用 `;` 分隔多个条目；标量值裸写，数组值必须用 `[..]` 包裹（如 `Params:[6,2.07]`），对象值用 `{..}` 整体替换；覆盖字段为顶层平铺，不支持点路径深层覆盖；转换期不校验目标表字段，键名或值类型有误在 tsc 编译期报错
 8. **换行**: `String` 字段换行保留为 `\n`；结构化字段（数组/Object/Object[]/Template/Template[]）中换行等价于对应分隔符（逗号或分号），支持"每行一条"排版，空行按 n+1 规则成为空槽；标量字段（Number/Boolean/Enum/单值 Ref）含换行时转换会告警，需去除；多行单元格在 CSV 中需用双引号包裹
+9. **大表降级**: 行数超过 1000 的表，`Record` 中作为唯一键的 `EnumIndex` 字段类型会从枚举联合回退为 `string`，其余字段不变；这样每一行对象字面量类型完全相同，可避免单个 `List` 数组字面量包含过多对象字面量类型时 tsc 的 `ts(2590) Expression produces a union type that is too complex to represent` 报错。`key` 联合类型与 `keyList` 仍照常生成（它们不会触发该限制），跨表 `RefEnum` 引用不受影响；代价是该大表的 `Record` 的键字段失去字面量级类型校验

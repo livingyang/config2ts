@@ -191,6 +191,18 @@ function csv2ts(csvString: string, moduleName: string): string {
     }
   }
 
+  // A single array literal holding more than ~1000 object literals makes tsc's
+  // subtype reduction (removeSubtypes) bail out with "ts(2590) Expression
+  // produces a union type that is too complex to represent". The only thing
+  // that makes every row a distinct object literal type is the EnumIndex
+  // (key) field, whose value is a unique literal per row. Falling that field
+  // back to string for large tables makes every row share one type, so the
+  // array literal union collapses instantly and the error disappears. The
+  // `key` union and `keyList` are still emitted (they do not trigger the
+  // limit), so cross-table RefEnum references keep working.
+  const maxRowsToKeepEnumKeyType = 1000;
+  const largeTable = result.length > maxRowsToKeepEnumKeyType;
+
   template += "    export interface Record {\n";
   let indexField: string | null = null;
   for (const field in convert) {
@@ -200,7 +212,7 @@ function csv2ts(csvString: string, moduleName: string): string {
       if (convert[field] == EnumStr) {
         fieldType = field;
       } else if (convert[field] == EnumIndexStr) {
-        fieldType = field;
+        fieldType = largeTable ? "string" : field;
         indexField = field;
       } else if (convert[field] == IndexStr) {
         indexField = field;
