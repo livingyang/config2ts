@@ -6,9 +6,77 @@ convert config to ts file.
 
 run command: `npm install -g config2ts`
 
-# how to use
+# documentation
 
-config2ts -d config -o dist -n csv.ts -a public
+Full documentation is published via GitHub Pages (this repo has Pages enabled):
+
+- English: https://livingyang.github.io/config2ts/
+- 中文: https://livingyang.github.io/config2ts/index-zh.html
+
+The docs source lives in [`docs/`](docs/):
+
+- [`docs/index.md`](docs/index.md) — English
+- [`docs/index-zh.md`](docs/index-zh.md) — 中文
+
+# usage
+
+`config2ts` supports two output modes selected by `-m, --mode`:
+
+- `single` (default): merge every table into one file (`-n`, default `csv.ts`).
+- `split`: write one `.ts` file per table plus an auto-generated `index.ts`.
+
+This repo's `config/` folder ships example outputs generated from the same source
+tables, so you can compare both layouts directly:
+
+- single mode example: [`config/total.ts`](config/total.ts)
+- split mode example: [`config/split/`](config/split/) (one file per table + `index.ts`)
+
+## single mode
+
+Merge all config tables into a single TypeScript file.
+
+```bash
+config2ts -d config -o dist -m single -n csv.ts -a public
+```
+
+- `-n` is the merged output file name (default `csv.ts`).
+- `-a` is optional; omit it to skip `assets.ts`.
+- Example output: [`config/total.ts`](config/total.ts) — all tables as `export namespace XxxCsv { ... }` in one file.
+
+## split mode
+
+Write one `.ts` file per config table (named after the source file, e.g.
+`skill.csv` → `skill.ts`) plus an auto-generated `index.ts` that re-exports every
+table and `assets.ts`. Cross-table `Ref`/`RefEnum`/`Template` references are
+resolved with `import` statements injected at the top of the referencing file, so
+every table is independently usable and tree-shakable.
+
+```bash
+config2ts -d config -o dist -m split -a public
+```
+
+- `-n` is reused as the index file name; the single-mode default `csv.ts` is
+  replaced by `index.ts` unless you pass `-n` explicitly.
+- `-a` is optional; omit it to skip `assets.ts`.
+- Example output: [`config/split/`](config/split/) — `z-base.ts`, `a-user.ts`,
+  `skill.ts`, … , `assets.ts`, and `index.ts`.
+
+Output layout under `dist`:
+
+```
+dist/
+  z-base.ts        # export namespace ZBaseCsv { ... }
+  a-user.ts        # import { ZBaseCsv } from "./z-base"; export namespace AUserCsv { ... }
+  skill.ts
+  ...
+  assets.ts        # generated only when -a is given
+  index.ts         # export * from "./z-base"; export * from "./a-user"; ...; export * from "./assets";
+```
+
+Notes:
+- Tables are emitted in topological order; a table only `import`s tables it
+  actually references, and missing/circular references print the same warnings as
+  single mode.
 
 # support type
 
@@ -48,7 +116,7 @@ config2ts -d config -o dist -n csv.ts -a public
 
 Scan assets directory and generate an `assets.ts` index file with nested resource tree.
 
-- `-a, --assets <path>` set assets resource directory. default: `public`
+- `-a, --assets <path>` set assets resource directory (optional, skip asset index if omitted)
 - Output file: `assets.ts` (alongside the merged config file)
 - File and directory names are used exactly as-is (e.g., `Direction.png` → `Direction`, `adjust-horizontal.png` → `'adjust-horizontal'`); keys with special characters are automatically quoted
 - `type` field uses file extension (lowercase), e.g. `'png'`, `'mp3'`, `'svg'`
@@ -103,9 +171,10 @@ const adjustMeta = ASSETS.public.image['adjust-horizontal'];
     -h, --help             output usage information
     -V, --version          output the version number
     -d, --dir <path>       set convert path. default: ./
-    -o, --outDir <path>    set outDir path. default: ./
-    -n, --name <name>      output file name. default: csv.ts
-    -a, --assets <path>    set assets resource directory for asset index. default: public
+    -o, --outDir <path>    set outDir path. default: same as -d
+    -n, --name <name>      output file name (single mode) / index file name (split mode). default: csv.ts
+    -a, --assets <path>    set assets resource directory for asset index (optional, skip asset index if omitted)
+    -m, --mode <mode>      output mode: single (merge into one file) or split (one file per table + index.ts). default: single
 ```
 
 ## supported file formats

@@ -10,10 +10,11 @@ const program = new Command();
 
 program
   .version(pkg.version)
-  .option("-n, --name <name>", "output file name", "csv.ts")
+  .option("-n, --name <name>", "output file name (single mode) / index file name (split mode)", "csv.ts")
   .option("-d, --dir <path>", "set convert path", ".")
   .option("-o, --outDir <path>", "set outDir path")
-  .option("-a, --assets <path>", "set assets resource directory for asset index", "public")
+  .option("-a, --assets <path>", "set assets resource directory for asset index (optional, skip asset index if omitted)")
+  .option("-m, --mode <mode>", "output mode: single (merge into one file) or split (one file per table + index.ts)", "single")
   .parse(process.argv);
 
 const options = program.opts();
@@ -33,4 +34,9 @@ if (assetsDir) {
   console.log("assetsDir:", assetsDir);
 }
 
-startConvert(dir, outDir, options.name, assetsDir);
+const mode = options.mode === "split" ? "split" : "single";
+if (mode === "single" && options.mode !== "single") {
+  console.warn(`[config2ts] warning: unknown mode "${options.mode}", falling back to "single"`);
+}
+
+startConvert(dir, outDir, options.name, assetsDir, mode);

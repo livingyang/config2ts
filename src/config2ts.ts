@@ -856,11 +856,81 @@ export function GetValidFileList(fileList: string[]): string[] {
   });
 }
 
-export function startConvert(dir: string, outDir: string, merge: string, assetsDir?: string): void {
+// Build the `import { XxxCsv } from "./xxx";` lines a split-mode file needs so
+// its cross-table Ref/RefEnum/Template references resolve. `collectCsvReferences`
+// returns the full base filenames (e.g. "z-base.csv") of referenced tables, which
+// map 1:1 to the split output file "./z-base.ts" and to the namespace
+// `pascalCase("z-base.csv")` === "ZBaseCsv".
+function buildImportLines(filePath: string, validBases: Set<string>): string {
+  const base = path.basename(filePath);
+  const refs = collectCsvReferences(filePath).filter((ref) => ref !== base);
+  const imported = new Set<string>();
+  const lines: string[] = [];
+  for (const ref of refs) {
+    if (!validBases.has(ref)) {
+      continue; // missing referenced table; already warned by sortFilesByReferences
+    }
+    if (imported.has(ref)) {
+      continue;
+    }
+    imported.add(ref);
+    const ns = changeCase.pascalCase(ref);
+    const importPath = "./" + path.parse(ref).name;
+    lines.push(`import { ${ns} } from "${importPath}";`);
+  }
+  return lines.join("\n");
+}
+
+export function startConvert(dir: string, outDir: string, merge: string, assetsDir?: string, mode: "single" | "split" = "single"): void {
   const fileList = fs.readdirSync(dir);
   const fullFileList = GetValidFileList(fileList).map(function (filename: string) {
     return path.join(dir, filename);
   });
+
+  if (mode === "split") {
+    const validBases = new Set(fullFileList.map((f) => path.basename(f)));
+    const orderedFiles = sortFilesByReferences(fullFileList);
+    const exportedNames: string[] = [];
+
+    for (const filePath of orderedFiles) {
+      const base = path.basename(filePath);
+      const outName = path.parse(base).name + ".ts";
+      exportedNames.push(path.parse(base).name);
+      const imports = buildImportLines(filePath, validBases);
+      const body = GetTsString(filePath);
+      const content = AutoGenHeader + (imports ? imports + "\n\n" : "") + body + "\n";
+      const outPath = path.join(outDir, outName);
+      fs.writeFileSync(outPath, content, { encoding: "utf-8" });
+      console.log(`config2ts, ${base} -> ${outPath}`);
+    }
+
+    let assetsExport: string | null = null;
+    if (assetsDir) {
+      const assetsOutput = assets2ts(assetsDir);
+      if (assetsOutput) {
+        const assetsFile = path.join(outDir, "assets.ts");
+        fs.writeFileSync(assetsFile, AutoGenHeader + assetsOutput, { encoding: "utf-8" });
+        console.log(`assets2ts, resource dir: ${assetsDir}, output: ${assetsFile}`);
+        assetsExport = "assets";
+      }
+    }
+
+    // In split mode the `-n` value is reused as the index file name; fall back to
+    // "index.ts" when the caller leaves the single-mode default "csv.ts" intact.
+    const indexName = merge !== "csv.ts" ? merge : "index.ts";
+    let indexContent = AutoGenHeader;
+    for (const name of exportedNames) {
+      indexContent += `export * from "./${name}";\n`;
+    }
+    if (assetsExport) {
+      indexContent += `export * from "./${assetsExport}";\n`;
+    }
+    const indexPath = path.join(outDir, indexName);
+    fs.writeFileSync(indexPath, indexContent, { encoding: "utf-8" });
+    console.log(`config2ts, ${orderedFiles.length} config files, split mode, index: ${indexPath}`);
+    return;
+  }
+
   const mergeFile = path.join(outDir, merge);
   fs.writeFileSync(mergeFile, AutoGenHeader + GetTsStringFromFileList(fullFileList), { encoding: "utf-8" });
   console.log(`config2ts, ${fullFileList.length} config files, merge into: ${mergeFile}`);
