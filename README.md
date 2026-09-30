@@ -13,11 +13,6 @@ Full documentation is published via GitHub Pages (this repo has Pages enabled):
 - English: https://livingyang.github.io/config2ts/
 - 中文: https://livingyang.github.io/config2ts/index-zh.html
 
-The docs source lives in [`docs/`](docs/):
-
-- [`docs/index.md`](docs/index.md) — English
-- [`docs/index-zh.md`](docs/index-zh.md) — 中文
-
 # usage
 
 `config2ts` supports two output modes selected by `-m, --mode`:
