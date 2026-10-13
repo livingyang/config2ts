@@ -38,3 +38,6 @@ jspm_packages
 
 dist/config
 dist/test
+
+# Compiled tests (node:test run output)
+.test-build
