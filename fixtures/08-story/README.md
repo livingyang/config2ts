@@ -47,3 +47,14 @@ chapter json (`id`/`chapter`/`title`/`triggerArea`), with the original
 `nodes` field renamed to `story` and turned into the sub-table reference.
 RefTable targets participate in topological sorting, so `StoryCsv` is always
 emitted before `StoryListCsv`.
+
+## Unreferenced member files
+
+Nothing has to point at a member file. An extra chapter (`ch04.csv`) used for
+testing or left half-written is merged normally and simply appears in the
+`File` union and `FileMap` — no warning, no error, no dangling reference.
+
+The one rule that still applies to every member file is isomorphism: a single
+csv with a different header or type row makes the directory unmergeable, so
+the whole `StoryCsv` is skipped (with a warning) even if that file is the one
+nobody references. Test data must keep the same columns.

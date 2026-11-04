@@ -23,6 +23,22 @@ function writeRowCsv(csvPath: string, rowCount: number): void {
   fs.writeFileSync(csvPath, lines.join("\n"));
 }
 
+// Collect the conversion warnings a call emits, so tests can assert that a
+// legitimate layout stays silent and a broken one speaks up.
+function captureWarnings(run: () => void): string[] {
+  const warnings: string[] = [];
+  const original = console.warn;
+  console.warn = (...args: unknown[]): void => {
+    warnings.push(args.map((arg) => String(arg)).join(" "));
+  };
+  try {
+    run();
+  } finally {
+    console.warn = original;
+  }
+  return warnings;
+}
+
 // Merging several tables in a single call is what the CLI does for every run,
 // and it has to interleave CSV namespaces with the plain objects emitted for
 // ini/toml in one sorted output. Per-case goldens only see one directory, so
@@ -141,6 +157,41 @@ test("merged subdirectory skips List and builds Map from FileMap", function () {
   // No flat List at all, and Map is populated from the file groups.
   assert.ok(!generated.includes("export const List"));
   assert.ok(generated.includes("for (const file in FileMap) { for (const v of FileMap[file]) { Map[v.id] = v; } };"));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// Member files nobody references are legitimate: extra chapters can exist for
+// testing or WIP without any table pointing at them. They still show up in the
+// File union and FileMap, and conversion must stay silent.
+test("unreferenced sub-tables are allowed", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const storyDir = path.join(tmpDir, "story");
+  fs.mkdirSync(storyDir);
+  fs.writeFileSync(path.join(storyDir, "ch01.csv"), ["seq,text", "Number,String", "10,one"].join("\n"));
+  fs.writeFileSync(path.join(storyDir, "ch02.csv"), ["seq,text", "Number,String", "10,two"].join("\n"));
+  // ch03 is a scratch/test chapter: no RefTable row ever names it.
+  fs.writeFileSync(path.join(storyDir, "ch03.csv"), ["seq,text", "Number,String", "10,scratch"].join("\n"));
+  fs.writeFileSync(path.join(tmpDir, "story-list.csv"), ["id,story", "Index,RefTable[story]", "ch01,ch01"].join("\n"));
+
+  const warnings = captureWarnings(() => GetTsStringFromUnits(collectConvertUnits(tmpDir)));
+  assert.deepEqual(warnings, []);
+  const generated = GetTsStringFromUnits(collectConvertUnits(tmpDir));
+  assert.ok(generated.includes('export type File = "ch01" | "ch02" | "ch03";'));
+  assert.ok(generated.includes("        ch03: ["));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// RefTable needs a merged subdirectory on the other end: pointing it at a plain
+// csv compiles to a call to a refTable() that does not exist, so warn early.
+test("RefTable to a table without sub-tables warns", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  fs.writeFileSync(path.join(tmpDir, "story.csv"), ["seq,text", "Number,String", "10,one"].join("\n"));
+  fs.writeFileSync(path.join(tmpDir, "story-list.csv"), ["id,story", "Index,RefTable[story]", "ch01,ch01"].join("\n"));
+
+  const warnings = captureWarnings(() => GetTsStringFromUnits(collectConvertUnits(tmpDir)));
+  assert.equal(warnings.length, 1);
+  assert.ok(warnings[0].includes("is not a merged subdirectory table"));
+  assert.ok(warnings[0].includes("RefTable[story.csv]"));
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 

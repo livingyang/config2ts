@@ -417,7 +417,9 @@ export const List: Record[] = [
 
 > The merged table needs no `Index` column — the member file name is the sub-table key. It also skips the flat `List` (it would duplicate every row) and exports only the per-file `FileMap`. RefTable targets take part in topological sorting, so the referenced merged table is always emitted first.
 >
-> **Validity constraint**: the merged table also emits a `File` literal union (`"ch01" | "ch02" | ...`) plus a `refTable(file: File)` accessor, so an unknown file name in a `RefTable` cell is a tsc compile error (argument type mismatch, independent of the `strict` flag). Conversion also warns and lists the valid file names, catching the mistake without a compile step.
+> **Validity constraint**: the merged table also emits a `File` literal union (`"ch01" | "ch02" | ...`) plus a `refTable(file: File)` accessor, so an unknown file name in a `RefTable` cell is a tsc compile error (argument type mismatch, independent of the `strict` flag). Conversion also warns and lists the valid file names, catching the mistake without a compile step. A `RefTable` aimed at a plain table (not a merged subdirectory, hence no sub-tables) warns as well — the generated `refTable()` call cannot compile.
+>
+> **Unreferenced sub-tables are allowed**: a member file does not need to be named by any `RefTable`. Extra chapters merge normally and only show up in the `File` union and `FileMap`, with no warning and no error — handy for test data or half-written drafts. The one hard requirement is isomorphism: a single member file whose header/type row differs makes the whole directory unmergeable (warning, skipped), even when that file is the unreferenced one.
 
 ### Reference Example
 
