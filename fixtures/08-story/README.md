@@ -10,7 +10,7 @@ editable one file at a time while the runtime loads a single `StoryCsv` table.
 The `chapter` + `seq` columns restore play order; `type`/`kind` are `Enum`
 columns, so adding a new node kind just extends the union type.
 
-## Sub-table binding (FileMap + RefSub)
+## Sub-table binding (FileMap + RefTable)
 
 The merged table drops the per-row `id` column: the member file name IS the
 key. The generated namespace therefore also exports:
@@ -23,12 +23,12 @@ export const FileMap: { [file: string]: Record[] } = {
 };
 ```
 
-Other tables reference a whole sub-table with `RefSub[story.csv]`: the cell
+Other tables reference a whole sub-table with `RefTable[story.csv]`: the cell
 holds a file name (`ch01`), the generated field is typed `StoryCsv.Record[]`
 and resolves to `StoryCsv.FileMap["ch01"]`. The array form
-`RefSub[story.csv][]` holds several file names and resolves to
+`RefTable[story.csv][]` holds several file names and resolves to
 `StoryCsv.Record[][]`. `story-list.csv` is the chapter index built this way —
 each row mirrors one chapter json (`id`/`chapter`/`title`/`triggerArea`), with
 the original `nodes` field renamed to `story` and turned into the sub-table
-reference. RefSub targets participate in topological sorting, so `StoryCsv`
+reference. RefTable targets participate in topological sorting, so `StoryCsv`
 is always emitted before `StoryListCsv`.
