@@ -1,0 +1,40 @@
+:root {
+  --bg: #0f1117;
+  --panel: #161a23;
+  --code-bg: #12151d;
+  --border: #262c3a;
+  --text: #dde3ee;
+  --muted: #8a93a6;
+  --accent: #4fb3ff;
+  --type-color: #7ee0a3;
+  --code-text: #c9d4e8;
+  --hover: #1c2230;
+  --mono: "JetBrains Mono", "Cascadia Code", Consolas, "Courier New", monospace;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7f8fa;
+    --panel: #ffffff;
+    --code-bg: #fbfcfe;
+    --border: #dfe3ea;
+    --text: #1f2733;
+    --muted: #667085;
+    --accent: #0b6bcb;
+    --type-color: #1a7f4b;
+    --code-text: #2a3444;
+    --hover: #eef1f6;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

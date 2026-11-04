@@ -41,6 +41,17 @@ documentation, tests and demos can never drift from actual tool behavior.
 - Tests: every case is regenerated in-memory and compared byte-for-byte against
   its golden file, and all golden files are additionally checked with `tsc`.
 
+## demo site
+
+[`website/`](website/) is a Vue3 + Vite site that renders every fixture case as
+an input → output comparison page. It reads the same `fixtures/` pairs the tests
+verify via `import.meta.glob(..., { query: "?raw" })` — no copies, no codegen —
+so the demo can never drift from actual tool behavior.
+
+- Local dev: `npm run demo:dev`
+- Build: `npm run demo:build` — output goes to `docs/app/`, published on GitHub
+  Pages at `/config2ts/app/`
+
 ## single mode
 
 Merge all config tables into a single TypeScript file.
