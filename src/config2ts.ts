@@ -342,15 +342,19 @@ function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[
     rowStrings.push(rowString);
   }
 
-  template += "    export const List: Record[] = [\n";
-  for (let i = 0; i < rowStrings.length; i++) {
-    template += rowStrings[i];
-    if (i < rowStrings.length - 1) {
-      template += ",";
+  // A merged subdirectory exposes its rows through FileMap only — a flat List
+  // would duplicate every row literal.
+  if (groupOffsets.length === 0) {
+    template += "    export const List: Record[] = [\n";
+    for (let i = 0; i < rowStrings.length; i++) {
+      template += rowStrings[i];
+      if (i < rowStrings.length - 1) {
+        template += ",";
+      }
+      template += "\n";
     }
-    template += "\n";
+    template += "    ];\n\n";
   }
-  template += "    ];\n\n";
 
   if (groupOffsets.length > 0) {
     template += "    export const FileMap: { [file: string]: Record[] } = {\n";
@@ -365,7 +369,11 @@ function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[
   }
   if (indexField != null) {
     template += "    export const Map: { [id: string]: Record } = {};\n";
-    template += `    for (const v of List) { Map[v.${indexField}] = v; };\n\n`;
+    if (groupOffsets.length > 0) {
+      template += `    for (const file in FileMap) { for (const v of FileMap[file]) { Map[v.${indexField}] = v; } };\n\n`;
+    } else {
+      template += `    for (const v of List) { Map[v.${indexField}] = v; };\n\n`;
+    }
   }
   template += "};";
   return template;

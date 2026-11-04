@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 // Compiled together with src by tsconfig.test.json, so this resolves to
 // .test-build/src/config2ts.js at runtime (same compiler options as the lib build).
-import { GetTsStringFromFileList, GetValidFileList, resolveTableName } from "../src/config2ts";
+import { GetTsStringFromFileList, GetTsStringFromUnits, GetValidFileList, collectConvertUnits, resolveTableName } from "../src/config2ts";
 
 // Compiled to .test-build/tests/, so the repository root is two levels up.
 const rootDir = path.resolve(__dirname, "../..");
@@ -120,6 +120,26 @@ test("resolveTableName matches exact names first, then unique stems", function (
   // Ambiguous stem: two units share it, the caller keeps the written form.
   const ambiguous = ["data.csv", "data.ini"];
   assert.equal(resolveTableName("data", ambiguous), null);
+});
+
+// A merged subdirectory exposes its rows through FileMap only: a flat List
+// would duplicate every row literal. When the member files keep an Index
+// column, Map is built by walking the FileMap groups instead of List.
+test("merged subdirectory skips List and builds Map from FileMap", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const storyDir = path.join(tmpDir, "story");
+  fs.mkdirSync(storyDir);
+  fs.writeFileSync(path.join(storyDir, "ch01.csv"), ["id,text", "Index,String", "a,one", "b,two"].join("\n"));
+  fs.writeFileSync(path.join(storyDir, "ch02.csv"), ["id,text", "Index,String", "c,three"].join("\n"));
+  const generated = GetTsStringFromUnits(collectConvertUnits(tmpDir));
+  assert.ok(generated.includes("export namespace StoryCsv"));
+  assert.ok(generated.includes("export const FileMap: { [file: string]: Record[] } = {"));
+  assert.ok(generated.includes("        ch01: ["));
+  assert.ok(generated.includes("        ch02: ["));
+  // No flat List at all, and Map is populated from the file groups.
+  assert.ok(!generated.includes("export const List"));
+  assert.ok(generated.includes("for (const file in FileMap) { for (const v of FileMap[file]) { Map[v.id] = v; } };"));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
 // The regression this guards against is a compiler limit, so it can only be

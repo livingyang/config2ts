@@ -415,7 +415,7 @@ export const List: Record[] = [
 ];
 ```
 
-> The merged table needs no `Index` column — the member file name is the sub-table key; the merged `List` still holds every row, grouped per file in `FileMap`. RefTable targets take part in topological sorting, so the referenced merged table is always emitted first.
+> The merged table needs no `Index` column — the member file name is the sub-table key. It also skips the flat `List` (it would duplicate every row) and exports only the per-file `FileMap`. RefTable targets take part in topological sorting, so the referenced merged table is always emitted first.
 
 ### Reference Example
 
