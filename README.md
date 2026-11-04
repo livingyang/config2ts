@@ -39,6 +39,12 @@ tables plus a committed golden file `expected.ts` generated from them. The same
 ([`tests/fixtures.test.ts`](tests/fixtures.test.ts)) and by the demo site, so
 documentation, tests and demos can never drift from actual tool behavior.
 
+A case may also use subdirectories: when every csv file inside a subdirectory
+shares the same header and type rows, they are merged into ONE table named
+after the directory (`fixtures/08-story/story/*.csv` → `StoryCsv`) — see
+[fixtures/08-story](fixtures/08-story) and the "Isomorphic subdirectory merge"
+section of the docs.
+
 - Regenerate golden files: `npm run fixtures:regen` (rebuilds lib, then rewrites
   every `expected.ts`) — review the diff manually before committing; never
   blindly rewrite a failing golden file.

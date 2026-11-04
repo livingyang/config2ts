@@ -195,6 +195,18 @@ export namespace UiCsv {
             zh: '单表多列：key + zh / en / ja 同在一行，运行时按语言取列，缺译一眼可见；占位符 {name} 原样保留。',
             en: 'One table',
             ja: 'one column per language: every translation of a key sits on one row',
+        },
+        {
+            key: 'case.08-story.title',
+            zh: '08 · 同构子目录合并',
+            en: '08 · Isomorphic subdirectory merge',
+            ja: '08 · 同型サブディレクトリ統合',
+        },
+        {
+            key: 'case.08-story.desc',
+            zh: '子目录内所有 CSV 表头与类型行完全一致时，合并导出为一个与子目录同名的表（story/ → StoryCsv）；三个章节文件各自维护，运行时只加载一张表。',
+            en: 'When every csv in a subdirectory shares the same header and type rows they merge into ONE table named after the directory (story/ → StoryCsv); chapters stay as separate files',
+            ja: 'the runtime loads a single table.',
         }
     ];
 

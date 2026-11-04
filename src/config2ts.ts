@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import { csvParse } from "d3-dsv";
+import { csvParse, csvParseRows, csvFormatRows } from "d3-dsv";
 import * as json5 from "json5";
 import * as changeCase from "change-case";
 import * as toml from "toml";
@@ -610,6 +610,13 @@ function GetFileExt(filePath: string): string {
   return pathObject.ext.slice(1);
 }
 
+// Read a config file and strip the UTF-8 BOM Excel likes to add.
+function readConfigFile(filePath: string): string {
+  let fileString = fs.readFileSync(filePath).toString();
+  if (fileString.charAt(0) === "\uFEFF") fileString = fileString.substr(1);
+  return fileString;
+}
+
 interface AssetNode {
   [key: string]: AssetNode | { path: string; type: string };
 }
@@ -737,13 +744,10 @@ export function assets2ts(assetsDir: string): string {
 }
 
 export function GetTsString(filePath: string): string {
-  const pathObject = path.parse(filePath);
   const handle = Convert[GetFileExt(filePath)];
   if (handle) {
-    const moduleName = changeCase.pascalCase(pathObject.base);
-    let fileString = fs.readFileSync(filePath).toString();
-    if (fileString.charAt(0) === "\uFEFF") fileString = fileString.substr(1);
-    return handle(fileString, moduleName);
+    const moduleName = changeCase.pascalCase(path.parse(filePath).base);
+    return handle(readConfigFile(filePath), moduleName);
   } else {
     return "";
   }
@@ -752,16 +756,9 @@ export function GetTsString(filePath: string): string {
 // Collect the config file names a CSV references from its type row
 // (Ref[file], RefEnum[file.field], Template[file] and their array forms).
 // ini/toml files never reference other config tables.
-function collectCsvReferences(filePath: string): string[] {
-  if (GetFileExt(filePath) !== "csv") {
-    return [];
-  }
-  let fileString = fs.readFileSync(filePath).toString();
-  if (fileString.charAt(0) === "\uFEFF") {
-    fileString = fileString.substr(1);
-  }
+function collectCsvReferencesFromContent(csvString: string): string[] {
   const references: string[] = [];
-  csvParse(fileString, function (d: Record<string, string>, i: number) {
+  csvParse(csvString, function (d: Record<string, string>, i: number) {
     if (i === 0) {
       for (const k in d) {
         const typeStr = d[k];
@@ -779,75 +776,195 @@ function collectCsvReferences(filePath: string): string[] {
   return references;
 }
 
-// Order files so every referenced table is emitted before the table that
+function collectCsvReferences(filePath: string): string[] {
+  if (GetFileExt(filePath) !== "csv") {
+    return [];
+  }
+  return collectCsvReferencesFromContent(readConfigFile(filePath));
+}
+
+// One convertible table: either a single file on disk, or a homogeneous
+// subdirectory merged into a virtual table (see tryMergeSubdir). `name` is the
+// base name with extension ("skill.csv" / "story.csv") and drives the module
+// naming, exactly like a real file name would ("story.csv" -> StoryCsv).
+export interface ConvertUnit {
+  name: string;
+  ext: string;
+  content: string;
+  // Disk paths this unit was built from; a merged subdirectory lists every
+  // member file, a plain file lists itself.
+  sourcePaths: string[];
+  // Referenced table base names (csv only, from the type row).
+  refs: string[];
+}
+
+function makeFileUnit(filePath: string): ConvertUnit {
+  const name = path.basename(filePath);
+  return {
+    name,
+    ext: GetFileExt(name),
+    content: readConfigFile(filePath),
+    sourcePaths: [filePath],
+    refs: collectCsvReferences(filePath),
+  };
+}
+
+// A subdirectory whose convertible files are ALL csv and share identical
+// header + type rows is merged into one virtual table named after the
+// directory ("<dir>.csv" -> pascalCase -> "<Dir>Csv"). Data rows are
+// concatenated in file-name order, so per-chapter/per-language splits stay
+// manageable on disk while the runtime sees a single table.
+function tryMergeSubdir(dir: string, dirName: string): ConvertUnit | null {
+  const entries = fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isFile());
+  const files = entries
+    .map((e) => path.join(dir, e.name))
+    .filter((f) => Convert[GetFileExt(f)] != null)
+    .sort();
+  if (files.length === 0) {
+    console.warn(`[config2ts] warning: directory "${dirName}" contains no convertible config files, skipped`);
+    return null;
+  }
+  const nonCsv = files.filter((f) => GetFileExt(f) !== "csv");
+  if (nonCsv.length > 0) {
+    console.warn(`[config2ts] warning: directory "${dirName}" mixes non-csv files (${nonCsv.map((f) => path.basename(f)).join(", ")}), cannot merge into one table, skipped`);
+    return null;
+  }
+  const contents = files.map(readConfigFile);
+  const headRows = contents.map((c) => csvParseRows(c).slice(0, 2));
+  const headKey = JSON.stringify(headRows[0]);
+  const uniform = headRows.every((rows) => rows.length === 2 && JSON.stringify(rows) === headKey);
+  if (!uniform) {
+    console.warn(`[config2ts] warning: directory "${dirName}" contains csv files with different header/type rows, cannot merge into one table, skipped`);
+    return null;
+  }
+  // Keep the first file's header + type rows once; every following file
+  // contributes its data rows only.
+  const allRows = [
+    ...csvParseRows(contents[0]),
+    ...contents.slice(1).flatMap((c) => csvParseRows(c).slice(2)),
+  ];
+  const mergedContent = csvFormatRows(allRows);
+  const keyType = headRows[0][1][0];
+  if (keyType === IndexStr || keyType === EnumIndexStr) {
+    const seen = new Set<string>();
+    for (let i = 2; i < allRows.length; i++) {
+      const key = allRows[i][0];
+      if (key !== "" && seen.has(key)) {
+        console.warn(`[config2ts] warning: merged table "${dirName}" has duplicate ${keyType} key "${key}"`);
+      }
+      seen.add(key);
+    }
+  }
+  const name = dirName.endsWith(".csv") ? dirName : dirName + ".csv";
+  return {
+    name,
+    ext: "csv",
+    content: mergedContent,
+    sourcePaths: files,
+    refs: collectCsvReferencesFromContent(mergedContent),
+  };
+}
+
+// Resolve a config directory into convert units: every convertible file
+// becomes one unit; every subdirectory is merged into a single unit when its
+// csv files are homogeneous (warned and skipped otherwise).
+export function collectConvertUnits(dir: string): ConvertUnit[] {
+  const entries = fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1));
+  const units: ConvertUnit[] = [];
+  const takenNames = new Set<string>();
+  const take = function (unit: ConvertUnit): void {
+    if (takenNames.has(unit.name)) {
+      console.warn(`[config2ts] warning: duplicate table name "${unit.name}", the generated namespaces will collide`);
+    }
+    takenNames.add(unit.name);
+    units.push(unit);
+  };
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isFile()) {
+      if (Convert[GetFileExt(entry.name)] == null) continue;
+      take(makeFileUnit(full));
+    } else if (entry.isDirectory()) {
+      const merged = tryMergeSubdir(full, entry.name);
+      if (merged) take(merged);
+    }
+  }
+  return units;
+}
+
+// Order units so every referenced table is emitted before the table that
 // references it (a referenced namespace must exist when the referencing
 // table's data initializes), so authors no longer need filename tricks (e.g.
-// an "!" prefix) to control order. Files without a dependency relation keep
-// their alphabetical order. References to missing files and circular
+// an "!" prefix) to control order. Units without a dependency relation keep
+// their alphabetical order. References to missing tables and circular
 // references are reported; a cycle is broken at the back edge so output is
 // still generated (the runtime data still needs the cycle fixed by hand).
-function sortFilesByReferences(fileList: string[]): string[] {
-  const ordered = fileList.slice().sort((a, b) => {
-    const baseA = path.basename(a);
-    const baseB = path.basename(b);
-    return baseA < baseB ? -1 : baseA > baseB ? 1 : 0;
-  });
-  const fileByBase = new Map<string, string>();
-  for (const filePath of ordered) {
-    fileByBase.set(path.basename(filePath), filePath);
+function sortUnitsByReferences(units: ConvertUnit[]): ConvertUnit[] {
+  const ordered = units.slice().sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  const unitByName = new Map<string, ConvertUnit>();
+  for (const unit of ordered) {
+    unitByName.set(unit.name, unit);
   }
-  const depsByBase = new Map<string, string[]>();
-  for (const filePath of ordered) {
-    const base = path.basename(filePath);
-    const deps = collectCsvReferences(filePath);
-    depsByBase.set(base, deps);
-    for (const dep of deps) {
-      if (!fileByBase.has(dep)) {
-        console.warn(`[config2ts] warning: ${base} references "${dep}" but no config file with that name was found in the config directory`);
+  const depsByName = new Map<string, string[]>();
+  for (const unit of ordered) {
+    depsByName.set(unit.name, unit.refs);
+    for (const dep of unit.refs) {
+      if (!unitByName.has(dep)) {
+        console.warn(`[config2ts] warning: ${unit.name} references "${dep}" but no config file with that name was found in the config directory`);
       }
     }
   }
-  const sorted: string[] = [];
+  const sorted: ConvertUnit[] = [];
   // 0 = unvisited, 1 = visiting (on the current DFS trail), 2 = done
   const state = new Map<string, number>();
   const reportedCycles = new Set<string>();
-  function visit(base: string, trail: string[]): void {
-    const current = state.get(base) ?? 0;
+  function visit(name: string, trail: string[]): void {
+    const current = state.get(name) ?? 0;
     if (current === 2) {
       return;
     }
     if (current === 1) {
-      const cycleStart = trail.indexOf(base);
-      const cycleKey = trail.slice(cycleStart).concat(base).join(" -> ");
+      const cycleStart = trail.indexOf(name);
+      const cycleKey = trail.slice(cycleStart).concat(name).join(" -> ");
       if (!reportedCycles.has(cycleKey)) {
         reportedCycles.add(cycleKey);
         console.warn(`[config2ts] warning: circular table reference detected: ${cycleKey}; tables in the cycle may reference an undefined namespace at runtime, please break the reference cycle`);
       }
       return;
     }
-    state.set(base, 1);
-    trail.push(base);
-    for (const dep of depsByBase.get(base) ?? []) {
-      if (fileByBase.has(dep)) {
+    state.set(name, 1);
+    trail.push(name);
+    for (const dep of depsByName.get(name) ?? []) {
+      if (unitByName.has(dep)) {
         visit(dep, trail);
       }
     }
     trail.pop();
-    state.set(base, 2);
-    sorted.push(fileByBase.get(base)!);
+    state.set(name, 2);
+    sorted.push(unitByName.get(name)!);
   }
-  for (const filePath of ordered) {
-    visit(path.basename(filePath), []);
+  for (const unit of ordered) {
+    visit(unit.name, []);
   }
   return sorted;
 }
 
-export function GetTsStringFromFileList(fileList: string[]): string {
-  return sortFilesByReferences(fileList)
-    .map(function (filePath: string) {
-      return GetTsString(filePath);
-    })
+function renderUnit(unit: ConvertUnit): string {
+  const handle = Convert[unit.ext];
+  if (!handle) {
+    return "";
+  }
+  return handle(unit.content, changeCase.pascalCase(unit.name));
+}
+
+export function GetTsStringFromUnits(units: ConvertUnit[]): string {
+  return sortUnitsByReferences(units)
+    .map(renderUnit)
     .join("\n\n");
+}
+
+export function GetTsStringFromFileList(fileList: string[]): string {
+  return GetTsStringFromUnits(fileList.map(makeFileUnit));
 }
 
 export function GetValidFileList(fileList: string[]): string[] {
@@ -857,18 +974,17 @@ export function GetValidFileList(fileList: string[]): string[] {
 }
 
 // Build the `import { XxxCsv } from "./xxx";` lines a split-mode file needs so
-// its cross-table Ref/RefEnum/Template references resolve. `collectCsvReferences`
-// returns the full base filenames (e.g. "z-base.csv") of referenced tables, which
-// map 1:1 to the split output file "./z-base.ts" and to the namespace
+// its cross-table Ref/RefEnum/Template references resolve. `unit.refs` holds the
+// full base names (e.g. "z-base.csv") of referenced tables, which map 1:1 to
+// the split output file "./z-base.ts" and to the namespace
 // `pascalCase("z-base.csv")` === "ZBaseCsv".
-function buildImportLines(filePath: string, validBases: Set<string>): string {
-  const base = path.basename(filePath);
-  const refs = collectCsvReferences(filePath).filter((ref) => ref !== base);
+function buildImportLines(unit: ConvertUnit, validNames: Set<string>): string {
+  const refs = unit.refs.filter((ref) => ref !== unit.name);
   const imported = new Set<string>();
   const lines: string[] = [];
   for (const ref of refs) {
-    if (!validBases.has(ref)) {
-      continue; // missing referenced table; already warned by sortFilesByReferences
+    if (!validNames.has(ref)) {
+      continue; // missing referenced table; already warned by sortUnitsByReferences
     }
     if (imported.has(ref)) {
       continue;
@@ -882,26 +998,24 @@ function buildImportLines(filePath: string, validBases: Set<string>): string {
 }
 
 export function startConvert(dir: string, outDir: string, merge: string, assetsDir?: string, mode: "single" | "split" = "single"): void {
-  const fileList = fs.readdirSync(dir);
-  const fullFileList = GetValidFileList(fileList).map(function (filename: string) {
-    return path.join(dir, filename);
-  });
+  const units = collectConvertUnits(dir);
+  const fileCount = units.reduce((n, u) => n + u.sourcePaths.length, 0);
 
   if (mode === "split") {
-    const validBases = new Set(fullFileList.map((f) => path.basename(f)));
-    const orderedFiles = sortFilesByReferences(fullFileList);
+    const validNames = new Set(units.map((u) => u.name));
+    const orderedUnits = sortUnitsByReferences(units);
     const exportedNames: string[] = [];
 
-    for (const filePath of orderedFiles) {
-      const base = path.basename(filePath);
-      const outName = path.parse(base).name + ".ts";
-      exportedNames.push(path.parse(base).name);
-      const imports = buildImportLines(filePath, validBases);
-      const body = GetTsString(filePath);
+    for (const unit of orderedUnits) {
+      const outName = path.parse(unit.name).name + ".ts";
+      exportedNames.push(path.parse(unit.name).name);
+      const imports = buildImportLines(unit, validNames);
+      const body = renderUnit(unit);
       const content = AutoGenHeader + (imports ? imports + "\n\n" : "") + body + "\n";
       const outPath = path.join(outDir, outName);
       fs.writeFileSync(outPath, content, { encoding: "utf-8" });
-      console.log(`config2ts, ${base} -> ${outPath}`);
+      const source = unit.sourcePaths.length > 1 ? `${unit.name} (${unit.sourcePaths.length} files)` : path.basename(unit.sourcePaths[0]);
+      console.log(`config2ts, ${source} -> ${outPath}`);
     }
 
     let assetsExport: string | null = null;
@@ -927,13 +1041,13 @@ export function startConvert(dir: string, outDir: string, merge: string, assetsD
     }
     const indexPath = path.join(outDir, indexName);
     fs.writeFileSync(indexPath, indexContent, { encoding: "utf-8" });
-    console.log(`config2ts, ${orderedFiles.length} config files, split mode, index: ${indexPath}`);
+    console.log(`config2ts, ${orderedUnits.length} config tables (${fileCount} files), split mode, index: ${indexPath}`);
     return;
   }
 
   const mergeFile = path.join(outDir, merge);
-  fs.writeFileSync(mergeFile, AutoGenHeader + GetTsStringFromFileList(fullFileList), { encoding: "utf-8" });
-  console.log(`config2ts, ${fullFileList.length} config files, merge into: ${mergeFile}`);
+  fs.writeFileSync(mergeFile, AutoGenHeader + GetTsStringFromUnits(units), { encoding: "utf-8" });
+  console.log(`config2ts, ${units.length} config tables (${fileCount} files), merge into: ${mergeFile}`);
 
   if (assetsDir) {
     const assetsOutput = assets2ts(assetsDir);

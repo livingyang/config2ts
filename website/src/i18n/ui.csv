@@ -31,3 +31,5 @@ case.06-ini-toml.title,06 · INI 与 TOML,06 · INI & TOML,06 · INI と TOML
 case.06-ini-toml.desc,非 CSV 格式：ini 与 toml 同样生成命名空间，含分区（section）。,Non-CSV formats: ini and toml produce the same namespaces, including sections.,CSV 以外の形式：ini と toml も同じ名前空間を生成（セクション含む）。
 case.07-i18n.title,07 · 多语言文案,07 · Localized text,07 · 多言語テキスト
 case.07-i18n.desc,单表多列：key + zh / en / ja 同在一行，运行时按语言取列，缺译一眼可见；占位符 {name} 原样保留。,One table, one column per language: every translation of a key sits on one row, the runtime picks a column, missing translations are obvious; {name} placeholders stay intact.,1 つの表に言語ごとの列：同じ key の翻訳が 1 行に並び、実行時に列を選ぶだけ。未翻訳も一目で分かり、{name} プレースホルダーはそのまま残る。
+case.08-story.title,08 · 同构子目录合并,08 · Isomorphic subdirectory merge,08 · 同型サブディレクトリ統合
+case.08-story.desc,子目录内所有 CSV 表头与类型行完全一致时，合并导出为一个与子目录同名的表（story/ → StoryCsv）；三个章节文件各自维护，运行时只加载一张表。,When every csv in a subdirectory shares the same header and type rows they merge into ONE table named after the directory (story/ → StoryCsv); chapters stay as separate files, the runtime loads a single table.,サブディレクトリ内の全 CSV が同じヘッダーと型行を持つとき、ディレクトリ名の 1 つのテーブルに統合（story/ → StoryCsv）。章ごとに編集し、実行時は 1 テーブルだけ読み込む。

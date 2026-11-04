@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 // Compiled together with src by tsconfig.test.json, so this resolves to
 // .test-build/src/config2ts.js at runtime (same compiler options as the lib build).
-import { GetTsStringFromFileList, GetValidFileList } from "../src/config2ts";
+import { GetTsStringFromUnits, collectConvertUnits } from "../src/config2ts";
 
 // Compiled to .test-build/tests/, so the repository root is two levels up.
 const rootDir = path.resolve(__dirname, "../..");
@@ -27,10 +27,9 @@ function fixtureCases(): string[] {
 
 function generateForCase(caseName: string): string {
   const caseDir = path.join(fixturesDir, caseName);
-  const sources = GetValidFileList(fs.readdirSync(caseDir))
-    .sort()
-    .map((f) => path.join(caseDir, f));
-  return HEADER + GetTsStringFromFileList(sources);
+  // collectConvertUnits resolves plain files AND homogeneous subdirectories
+  // (merged into one virtual table named after the directory).
+  return HEADER + GetTsStringFromUnits(collectConvertUnits(caseDir));
 }
 
 for (const caseName of fixtureCases()) {

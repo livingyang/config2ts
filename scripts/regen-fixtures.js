@@ -8,7 +8,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { GetTsStringFromFileList, GetValidFileList } = require("../lib/config2ts");
+const { GetTsStringFromUnits, collectConvertUnits, GetTsStringFromFileList, GetValidFileList } = require("../lib/config2ts");
 
 const rootDir = path.join(__dirname, "..");
 const fixturesDir = path.join(rootDir, "fixtures");
@@ -28,14 +28,15 @@ if (caseDirs.length === 0) {
 let updated = 0;
 for (const caseName of caseDirs) {
   const caseDir = path.join(fixturesDir, caseName);
-  const sources = GetValidFileList(fs.readdirSync(caseDir))
-    .sort()
-    .map((f) => path.join(caseDir, f));
-  if (sources.length === 0) {
+  // collectConvertUnits resolves the case directory: plain files become one
+  // unit each, and homogeneous subdirectories merge into a single virtual
+  // table named after the directory (see fixtures/08-story).
+  const units = collectConvertUnits(caseDir);
+  if (units.length === 0) {
     console.warn(`skip ${caseName}: no csv/ini/toml source tables`);
     continue;
   }
-  const generated = HEADER + GetTsStringFromFileList(sources);
+  const generated = HEADER + GetTsStringFromUnits(units);
   const outPath = path.join(caseDir, "expected.ts");
   const prev = fs.existsSync(outPath) ? fs.readFileSync(outPath, "utf-8") : null;
   fs.writeFileSync(outPath, generated);

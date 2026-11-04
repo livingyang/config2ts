@@ -16,7 +16,9 @@ export interface FixtureCase {
 
 // NOTE: import.meta.glob requires its options to be an inline object literal
 // (Vite parses the call statically), so the options are repeated on purpose.
-const sourceModules = import.meta.glob("../../fixtures/*/*.{csv,ini,toml}", {
+// The `**` form also reaches files inside case subdirectories (e.g.
+// fixtures/08-story/story/ch01.csv); caseIdOf still maps them to the case.
+const sourceModules = import.meta.glob("../../fixtures/**/*.{csv,ini,toml}", {
   query: "?raw",
   import: "default",
   eager: true,
@@ -33,10 +35,19 @@ const readmeModules = import.meta.glob("../../fixtures/*/README.md", {
 }) as Record<string, string>;
 
 function caseIdOf(key: string): string {
-  // key looks like "../../fixtures/01-basic-types/data.csv"
+  // key looks like "../../fixtures/01-basic-types/data.csv" or
+  // "../../fixtures/08-story/story/ch01.csv"
   const parts = key.split("/");
   const i = parts.indexOf("fixtures");
   return parts[i + 1];
+}
+
+// Display name relative to the case directory, so nested files show as
+// "story/ch01.csv" instead of a bare "ch01.csv".
+function relativeNameOf(key: string): string {
+  const parts = key.split("/");
+  const i = parts.indexOf("fixtures");
+  return parts.slice(i + 2).join("/");
 }
 
 function readDescription(caseId: string): { title: string; description: string } {
@@ -56,7 +67,7 @@ for (const [key, raw] of Object.entries(sourceModules)) {
     const meta = readDescription(id);
     byId.set(id, { id, title: meta.title, description: meta.description, files: [], expected: "" });
   }
-  byId.get(id)!.files.push({ name: key.split("/").pop()!, raw });
+  byId.get(id)!.files.push({ name: relativeNameOf(key), raw });
 }
 
 for (const [key, raw] of Object.entries(expectedModules)) {
@@ -65,7 +76,12 @@ for (const [key, raw] of Object.entries(expectedModules)) {
   if (c) c.expected = raw;
 }
 
-export const fixtures: FixtureCase[] = [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
+const caseList = [...byId.values()];
+for (const c of caseList) {
+  c.files.sort((a, b) => (a.name < b.name ? -1 : 1));
+}
+
+export const fixtures: FixtureCase[] = caseList.sort((a, b) => a.id.localeCompare(b.id));
 
 export function findCase(id: string | null): FixtureCase | null {
   if (!id) return null;

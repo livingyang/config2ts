@@ -1,0 +1,12 @@
+﻿id,chapter,seq,type,speaker,text,key,color,kind
+Index,String,Number,Enum,String,String,String,String,Enum
+n0101,ch01,10,bg,,,bg_diner_dusk,#2b2118,
+n0102,ch01,20,line,旁白,"海风把旧招牌吹得吱呀作响。这家海边小餐厅，已经三年没有亮过灯。",,,
+n0103,ch01,30,line,林夏,"钥匙我还留着。妈妈说过，炉子只要还能点着，店就没倒。",,,
+n0104,ch01,40,line,阿哲,"那还等什么？面粉我来扛，菜单你来定——今晚就开张。",,,
+n0105,ch01,50,effect,,,,,fade
+n0106,ch01,60,bg,,,bg_kitchen_warm,#3a2a1c,
+n0107,ch01,70,line,旁白,"第一炉面包出炉时，整条街都闻到了香味。",,,
+n0108,ch01,80,line,林夏,"一袋面粉、一个面团、一只刚出炉的面包……原来幸福是这么具体的东西。",,,
+n0109,ch01,90,cg,,,cg_sign_on,#f0b45a,
+n0110,ch01,100,line,旁白,"招牌重新亮起。海畔餐厅的故事，从这一炉面包开始。",,,
