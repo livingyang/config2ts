@@ -320,10 +320,10 @@ function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[
         const refTable = parseRefTable(convert[field])!;
         const refModuleName = changeCase.pascalCase(refTable.refModule);
         if (refTable.isArray) {
-          const names = (value as string[]).map((name) => `${refModuleName}.FileMap[${JSON.stringify(name)}]`).join(",");
+          const names = (value as string[]).map((name) => `${refModuleName}.subTable(${JSON.stringify(name)})`).join(",");
           rowString += `            ${serializeField(field)}: [${names}],\n`;
         } else {
-          rowString += `            ${serializeField(field)}: ${refModuleName}.FileMap[${JSON.stringify(value)}],\n`;
+          rowString += `            ${serializeField(field)}: ${refModuleName}.subTable(${JSON.stringify(value)}),\n`;
         }
       } else if (parseTemplate(convert[field])) {
         const templateType = parseTemplate(convert[field])!;
@@ -357,7 +357,16 @@ function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[
   }
 
   if (groupOffsets.length > 0) {
-    template += "    export const FileMap: { [file: string]: Record[] } = {\n";
+    // The FileMap keys are a literal union of the member file names, so a
+    // RefTable cell that names a file which does not exist fails at tsc
+    // compile time (FileMap["ch99"] is not indexable) instead of silently
+    // producing undefined at runtime. A mapped type is used instead of
+    // `Record<File, ...>` because the namespace's own `Record` interface
+    // shadows the global utility type; it also rejects a missing group.
+    const fileNames = groupOffsets.map((group) => JSON.stringify(group.name));
+    template += `    export type File = ${fileNames.join(" | ")};\n`;
+    template += `    export const FileList: File[] = [${fileNames.join(", ")}];\n\n`;
+    template += "    export const FileMap: { [file in File]: Record[] } = {\n";
     for (const group of groupOffsets) {
       template += `        ${serializeField(group.name)}: [\n`;
       for (let i = group.start; i < group.end; i++) {
@@ -366,6 +375,11 @@ function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[
       template += "        ],\n";
     }
     template += "    };\n\n";
+    // RefTable resolves through this accessor instead of indexing FileMap
+    // directly: indexing an unknown literal key is only an error under
+    // noImplicitAny, while passing a wrong argument to a `File` parameter is
+    // an error under every tsc flag combination.
+    template += "    export function subTable(file: File): Record[] { return FileMap[file]; }\n\n";
   }
   if (indexField != null) {
     template += "    export const Map: { [id: string]: Record } = {};\n";
@@ -1067,6 +1081,42 @@ function tryMergeSubdir(dir: string, dirName: string, allNames?: Set<string>): C
   };
 }
 
+// RefTable cells must name an existing member file of the target merged
+// table. The generated FileMap is keyed by a literal union, so a wrong name
+// also fails tsc; checking here surfaces the mistake at conversion time with
+// the valid keys listed, and without needing a compile step.
+function validateRefTableValues(units: ConvertUnit[]): void {
+  const unitByName = new Map<string, ConvertUnit>();
+  for (const unit of units) {
+    unitByName.set(unit.name, unit);
+  }
+  for (const unit of units) {
+    if (unit.ext !== "csv") continue;
+    const rows = csvParseRows(unit.content);
+    if (rows.length < 2) continue;
+    const headerRow = rows[0];
+    const typeRow = rows[1];
+    for (let column = 0; column < typeRow.length; column++) {
+      const refTable = parseRefTable(typeRow[column]);
+      if (!refTable) continue;
+      const target = unitByName.get(refTable.refModule);
+      if (!target || !target.subTables) continue;
+      const validKeys = new Set(target.subTables.map((subTable) => subTable.name));
+      for (let rowIndex = 2; rowIndex < rows.length; rowIndex++) {
+        const cell = normalizeCell(rows[rowIndex][column] ?? "");
+        const names = refTable.isArray ? splitStringArray(cell) : cell === "" ? [] : [cell];
+        for (const name of names) {
+          if (name !== "" && !validKeys.has(name)) {
+            // Row numbers follow the other csv warnings: the type row is 0,
+            // so the first data row (csvParseRows index 2) is row 1.
+            console.warn(`[config2ts] warning: ${unit.name} row ${rowIndex - 1} field "${headerRow[column]}" references sub-table "${name}" which does not exist in "${target.name}" (valid: ${Array.from(validKeys).join(", ")})`);
+          }
+        }
+      }
+    }
+  }
+}
+
 // Resolve a config directory into convert units: every convertible file
 // becomes one unit; every subdirectory is merged into a single unit when its
 // csv files are homogeneous (warned and skipped otherwise). Unit names are
@@ -1102,6 +1152,7 @@ export function collectConvertUnits(dir: string): ConvertUnit[] {
       if (merged) take(merged);
     }
   }
+  validateRefTableValues(units);
   return units;
 }
 

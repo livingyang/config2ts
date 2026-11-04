@@ -133,12 +133,49 @@ test("merged subdirectory skips List and builds Map from FileMap", function () {
   fs.writeFileSync(path.join(storyDir, "ch02.csv"), ["id,text", "Index,String", "c,three"].join("\n"));
   const generated = GetTsStringFromUnits(collectConvertUnits(tmpDir));
   assert.ok(generated.includes("export namespace StoryCsv"));
-  assert.ok(generated.includes("export const FileMap: { [file: string]: Record[] } = {"));
+  // Keys are a literal union, so FileMap["<unknown>"] is not indexable.
+  assert.ok(generated.includes('export type File = "ch01" | "ch02";'));
+  assert.ok(generated.includes("export const FileMap: { [file in File]: Record[] } = {"));
   assert.ok(generated.includes("        ch01: ["));
   assert.ok(generated.includes("        ch02: ["));
   // No flat List at all, and Map is populated from the file groups.
   assert.ok(!generated.includes("export const List"));
   assert.ok(generated.includes("for (const file in FileMap) { for (const v of FileMap[file]) { Map[v.id] = v; } };"));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// FileMap is keyed by a literal union of the member file names, so a RefTable
+// cell naming a sub-table that does not exist must fail at compile time
+// instead of silently yielding undefined at runtime.
+test("RefTable to a missing sub-table fails tsc, a valid one compiles", { timeout: 120000 }, function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const storyDir = path.join(tmpDir, "story");
+  fs.mkdirSync(storyDir);
+  fs.writeFileSync(path.join(storyDir, "ch01.csv"), ["seq,text", "Number,String", "10,hello"].join("\n"));
+  fs.writeFileSync(path.join(storyDir, "ch02.csv"), ["seq,text", "Number,String", "10,world"].join("\n"));
+  fs.writeFileSync(path.join(tmpDir, "story-list.csv"), ["id,story", "Index,RefTable[story]", "ch01,ch01"].join("\n"));
+
+  function compile(tsPath: string): { failed: boolean; output: string } {
+    const tscPath = path.join(rootDir, "node_modules/typescript/bin/tsc");
+    try {
+      execFileSync(process.execPath, [tscPath, "--noEmit", "--skipLibCheck", "--target", "ES2021", "--module", "ES2022", tsPath], { encoding: "utf-8" });
+      return { failed: false, output: "" };
+    } catch (e: unknown) {
+      const err = e as { stdout?: string; stderr?: string; message?: string };
+      return { failed: true, output: `${err.stdout ?? ""}${err.stderr ?? ""}${err.message ?? ""}` };
+    }
+  }
+
+  const validPath = path.join(tmpDir, "valid.ts");
+  fs.writeFileSync(validPath, GetTsStringFromUnits(collectConvertUnits(tmpDir)));
+  assert.equal(compile(validPath).failed, false);
+
+  fs.writeFileSync(path.join(tmpDir, "story-list.csv"), ["id,story", "Index,RefTable[story]", "ch01,ch99"].join("\n"));
+  const brokenPath = path.join(tmpDir, "broken.ts");
+  fs.writeFileSync(brokenPath, GetTsStringFromUnits(collectConvertUnits(tmpDir)));
+  const broken = compile(brokenPath);
+  assert.equal(broken.failed, true);
+  assert.ok(broken.output.includes("ch99"));
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 

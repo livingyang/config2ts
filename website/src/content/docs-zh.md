@@ -185,7 +185,7 @@ fruit = 2
 | `RefEnum[table.field][]` | `表名.字段名[]` | 引用其他表的枚举数组 |
 | `Template[table]` | `表名.Record` | 模板继承：以目标表一行为原型并覆盖部分字段，单元格 `id\|key:value,...`，数组/对象值用 `[..]`/`{..}` 包裹，无覆盖项时等同 `Ref[table]` |
 | `Template[table][]` | `表名.Record[]` | 模板数组，分号 `;` 分隔多个模板条目（同 `Object[]`） |
-| `RefTable[table]` | `表名.Record[]` | 引用同构子目录合并表的子表：值为成员文件名（`FileMap` 的 key），生成 `表名.FileMap["文件名"]`（见用例 08-story） |
+| `RefTable[table]` | `表名.Record[]` | 引用同构子目录合并表的子表：值为成员文件名（`FileMap` 的 key），生成 `表名.subTable("文件名")`（见用例 08-story） |
 | `RefTable[table][]` | `表名.Record[][]` | 子表引用数组，逗号分隔多个成员文件名 |
 
 ### 类型说明
@@ -392,7 +392,7 @@ export const List: Record[] = [
 
 ### RefTable - 引用同构子目录合并表的子表
 
-使用 `RefTable[表名]` 可以引用"同构子目录合并表"中的一张子表：单元格填写成员文件名（即生成代码中 `FileMap` 的 key），生成 `表名.FileMap["文件名"]`，字段类型为 `表名.Record[]`。适合"章节目录 + 章节索引"场景（见用例 08-story）：
+使用 `RefTable[表名]` 可以引用"同构子目录合并表"中的一张子表：单元格填写成员文件名（即生成代码中 `File` 联合类型的成员），生成 `表名.subTable("文件名")`，字段类型为 `表名.Record[]`。适合"章节目录 + 章节索引"场景（见用例 08-story）：
 
 ```csv
 id,chapter,title,story
@@ -409,12 +409,14 @@ export interface Record {
 
 export const List: Record[] = [
     {
-        story: StoryCsv.FileMap["ch01"],
+        story: StoryCsv.subTable("ch01"),
     },
 ];
 ```
 
 > 合并表无需 `Index` 列，成员文件名就是子表的 key；也不会生成扁平的 `List`（会与 `FileMap` 逐行重复），只导出按文件名分组的 `FileMap`。引用目标参与拓扑排序，被引用的合并表总是先输出。
+>
+> **有效性约束**：合并表会生成 `File` 字面量联合类型（`"ch01" | "ch02" | ...`）与 `subTable(file: File)` 访问器，`RefTable` 单元格填写不存在的文件名时 tsc 直接编译报错（参数类型不匹配，与是否开启 `strict` 无关）；转换阶段也会告警并列出合法文件名，无需编译即可发现问题。
 
 ### 引用示例
 
