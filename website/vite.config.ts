@@ -2,11 +2,12 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import path from "node:path";
 
-// The site is published under the repo's GitHub Pages as a sub-app:
-// https://livingyang.github.io/config2ts/app/ — hence the base path.
-// Build output goes to docs/app/ (docs/ is the Pages root, artifacts only).
+// The site is published on the repo's GitHub Pages root:
+// https://livingyang.github.io/config2ts/ — hence the base path.
+// Build output goes to docs/ (the Pages root, artifacts only; the old
+// Jekyll-rendered index.md / index-zh.md moved into src/content/).
 export default defineConfig({
-  base: "/config2ts/app/",
+  base: "/config2ts/",
   plugins: [vue()],
   server: {
     fs: {
@@ -16,7 +17,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "../docs/app",
+    outDir: "../docs",
     emptyOutDir: true,
   },
 });

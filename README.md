@@ -10,8 +10,11 @@ run command: `npm install -g config2ts`
 
 Full documentation is published via GitHub Pages (this repo has Pages enabled):
 
-- English: https://livingyang.github.io/config2ts/
-- 中文: https://livingyang.github.io/config2ts/index-zh.html
+- English: https://livingyang.github.io/config2ts/#/docs/en
+- 中文: https://livingyang.github.io/config2ts/#/docs/zh
+
+Both the documentation pages and the per-feature demo cases are served by the
+Vue site in [`website/`](website/) (built into `docs/`).
 
 # usage
 

@@ -3,24 +3,42 @@ import { computed, ref, watch } from "vue";
 import { fixtures, findCase } from "./fixtures";
 import CodeBlock from "./components/CodeBlock.vue";
 import CsvTable from "./components/CsvTable.vue";
+import DocsView from "./views/DocsView.vue";
 
-const currentId = ref<string | null>(fromHash());
-
-function fromHash(): string | null {
-  const m = window.location.hash.match(/^#\/case\/(.+)$/);
-  return m ? decodeURIComponent(m[1]) : null;
+interface Route {
+  view: "docs" | "case";
+  param: string;
 }
+
+function parseHash(): Route {
+  const m = window.location.hash.match(/^#\/(docs|case)\/(.+)$/);
+  if (m) return { view: m[1] as Route["view"], param: decodeURIComponent(m[2]) };
+  return { view: "docs", param: "zh" };
+}
+
+const route = ref<Route>(parseHash());
 
 watch(
   () => window.location.hash,
-  () => (currentId.value = fromHash()),
+  () => (route.value = parseHash()),
 );
 
-function select(id: string): void {
-  window.location.hash = `#/case/${id}`;
+function go(path: string): void {
+  window.location.hash = path;
 }
 
-const current = computed(() => findCase(currentId.value) ?? fixtures[0] ?? null);
+const currentCase = computed(() => (route.value.view === "case" ? findCase(route.value.param) : null) ?? fixtures[0] ?? null);
+
+const navItems = [
+  { path: "#/docs/zh", label: "文档 · 中文", view: "docs", param: "zh" },
+  { path: "#/docs/en", label: "文档 · English", view: "docs", param: "en" },
+  { path: `#/case/${fixtures[0]?.id ?? ""}`, label: "功能用例", view: "case", param: fixtures[0]?.id ?? "" },
+] as const;
+
+function isActive(item: (typeof navItems)[number]): boolean {
+  if (item.view === "case" && route.value.view === "case") return true;
+  return item.view === route.value.view && item.param === route.value.param;
+}
 
 function isTable(name: string): boolean {
   return /\.(csv|ini|toml)$/.test(name);
@@ -30,48 +48,60 @@ function isTable(name: string): boolean {
 <template>
   <div class="layout">
     <header class="topbar">
-      <div class="brand">
+      <a class="brand" href="#/docs/zh">
         <span class="logo">config2ts</span>
-        <span class="tagline">配置表 → 类型安全 TypeScript · 功能演示</span>
-      </div>
+        <span class="tagline">配置表 → 类型安全 TypeScript</span>
+      </a>
+      <nav class="nav">
+        <a
+          v-for="item in navItems"
+          :key="item.path"
+          class="nav-item"
+          :class="{ active: isActive(item) }"
+          :href="item.path"
+        >{{ item.label }}</a>
+      </nav>
       <a class="gh-link" href="https://github.com/livingyang/config2ts" target="_blank" rel="noreferrer">GitHub →</a>
     </header>
 
     <div class="body">
-      <nav class="sidebar">
+      <nav v-if="route.view === 'case'" class="sidebar">
         <div class="side-title">测试用例</div>
         <button
           v-for="c in fixtures"
           :key="c.id"
           class="case-item"
-          :class="{ active: current?.id === c.id }"
+          :class="{ active: currentCase?.id === c.id }"
           type="button"
-          @click="select(c.id)"
+          @click="go(`#/case/${c.id}`)"
         >
           <span class="case-name">{{ c.id }}</span>
         </button>
         <p class="side-note">以下输入与输出与单元测试中的 golden file 完全一致，由 <code>fixtures:regen</code> 生成。</p>
       </nav>
 
-      <main v-if="current" class="content">
-        <h1 class="case-title">{{ current.title }}</h1>
-        <p class="case-desc">{{ current.description }}</p>
+      <main class="content" :class="{ wide: route.view === 'case' }">
+        <DocsView v-if="route.view === 'docs'" :lang="route.param === 'en' ? 'en' : 'zh'" />
+        <template v-else-if="currentCase">
+          <h1 class="case-title">{{ currentCase.title }}</h1>
+          <p class="case-desc">{{ currentCase.description }}</p>
 
-        <section class="panel">
-          <h2 class="panel-title">输入 · 源配置表</h2>
-          <div v-for="f in current.files" :key="f.name" class="stack">
-            <div class="file-label">{{ f.name }}</div>
-            <CsvTable v-if="isTable(f.name)" :filename="f.name" :raw="f.raw" />
-            <CodeBlock v-else :filename="f.name" :code="f.raw" />
-          </div>
-        </section>
+          <section class="panel">
+            <h2 class="panel-title">输入 · 源配置表</h2>
+            <div v-for="f in currentCase.files" :key="f.name" class="stack">
+              <div class="file-label">{{ f.name }}</div>
+              <CsvTable v-if="isTable(f.name)" :filename="f.name" :raw="f.raw" />
+              <CodeBlock v-else :filename="f.name" :code="f.raw" />
+            </div>
+          </section>
 
-        <div class="arrow">↓ 转换</div>
+          <div class="arrow">↓ 转换</div>
 
-        <section class="panel">
-          <h2 class="panel-title">输出 · 生成 TypeScript</h2>
-          <CodeBlock filename="expected.ts" :code="current.expected" />
-        </section>
+          <section class="panel">
+            <h2 class="panel-title">输出 · 生成 TypeScript</h2>
+            <CodeBlock filename="expected.ts" :code="currentCase.expected" />
+          </section>
+        </template>
       </main>
     </div>
   </div>
@@ -86,7 +116,7 @@ function isTable(name: string): boolean {
 .topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 24px;
   padding: 12px 24px;
   border-bottom: 1px solid var(--border);
   background: var(--panel);
@@ -98,6 +128,8 @@ function isTable(name: string): boolean {
   display: flex;
   align-items: baseline;
   gap: 12px;
+  text-decoration: none;
+  color: var(--text);
 }
 .logo {
   font-family: var(--mono);
@@ -108,6 +140,27 @@ function isTable(name: string): boolean {
 .tagline {
   font-size: 13px;
   color: var(--muted);
+}
+.nav {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.nav-item {
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 5px 12px;
+  border-radius: 6px;
+}
+.nav-item:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+.nav-item.active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-weight: 600;
 }
 .gh-link {
   font-size: 13px;
@@ -175,6 +228,9 @@ function isTable(name: string): boolean {
   flex: 1;
   min-width: 0;
   padding: 28px 36px 64px;
+  max-width: 960px;
+}
+.content.wide {
   max-width: 1100px;
 }
 .case-title {
@@ -228,6 +284,9 @@ function isTable(name: string): boolean {
   }
   .content {
     padding: 20px 16px 48px;
+  }
+  .tagline {
+    display: none;
   }
 }
 </style>
