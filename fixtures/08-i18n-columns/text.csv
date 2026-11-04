@@ -1,0 +1,11 @@
+﻿key,zh,en,ja
+Index,String,String,String
+ui.title,海畔餐厅,Seaside Diner,海辺の食堂
+ui.open,开始营业,Open for business,開店する
+ui.inventory,仓库,Inventory,倉庫
+item.apple.name,苹果,Apple,りんご
+item.bread.name,面包,Bread,パン
+item.tea.name,热茶,Hot tea,温かいお茶
+line.welcome,欢迎回来，{player}！,"Welcome back, {player}!",おかえりなさい、{player}さん！
+line.orders,今天已有 {count} 位客人点单。,{count} guests ordered today.,本日は {count} 名の注文がありました。
+line.empty,仓库空空的，先去采买吧。,The pantry is empty — time to go shopping.,倉庫は空っぽです。買い出しに行きましょう。
