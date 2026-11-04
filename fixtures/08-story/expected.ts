@@ -9,7 +9,6 @@ export namespace StoryCsv {
     export const kindList: kind[] = ["", "fade", "flash", "shake"];
 
     export interface Record {
-        id: string;
         chapter: string;
         seq: number;
         type: type;
@@ -22,7 +21,6 @@ export namespace StoryCsv {
 
     export const List: Record[] = [
         {
-            id: 'n0101',
             chapter: 'ch01',
             seq: 10,
             type: 'bg',
@@ -33,7 +31,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0102',
             chapter: 'ch01',
             seq: 20,
             type: 'line',
@@ -44,7 +41,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0103',
             chapter: 'ch01',
             seq: 30,
             type: 'line',
@@ -55,7 +51,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0104',
             chapter: 'ch01',
             seq: 40,
             type: 'line',
@@ -66,7 +61,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0105',
             chapter: 'ch01',
             seq: 50,
             type: 'effect',
@@ -77,7 +71,6 @@ export namespace StoryCsv {
             kind: 'fade',
         },
         {
-            id: 'n0106',
             chapter: 'ch01',
             seq: 60,
             type: 'bg',
@@ -88,7 +81,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0107',
             chapter: 'ch01',
             seq: 70,
             type: 'line',
@@ -99,7 +91,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0108',
             chapter: 'ch01',
             seq: 80,
             type: 'line',
@@ -110,7 +101,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0109',
             chapter: 'ch01',
             seq: 90,
             type: 'cg',
@@ -121,7 +111,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0110',
             chapter: 'ch01',
             seq: 100,
             type: 'line',
@@ -132,7 +121,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0201',
             chapter: 'ch02',
             seq: 10,
             type: 'bg',
@@ -143,7 +131,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0202',
             chapter: 'ch02',
             seq: 20,
             type: 'line',
@@ -154,7 +141,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0203',
             chapter: 'ch02',
             seq: 30,
             type: 'line',
@@ -165,7 +151,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0204',
             chapter: 'ch02',
             seq: 40,
             type: 'line',
@@ -176,7 +161,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0205',
             chapter: 'ch02',
             seq: 50,
             type: 'effect',
@@ -187,7 +171,6 @@ export namespace StoryCsv {
             kind: 'flash',
         },
         {
-            id: 'n0206',
             chapter: 'ch02',
             seq: 60,
             type: 'line',
@@ -198,7 +181,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0207',
             chapter: 'ch02',
             seq: 70,
             type: 'line',
@@ -209,7 +191,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0208',
             chapter: 'ch02',
             seq: 80,
             type: 'cg',
@@ -220,7 +201,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0209',
             chapter: 'ch02',
             seq: 90,
             type: 'line',
@@ -231,7 +211,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0301',
             chapter: 'ch03',
             seq: 10,
             type: 'bg',
@@ -242,7 +221,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0302',
             chapter: 'ch03',
             seq: 20,
             type: 'line',
@@ -253,7 +231,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0303',
             chapter: 'ch03',
             seq: 30,
             type: 'line',
@@ -264,7 +241,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0304',
             chapter: 'ch03',
             seq: 40,
             type: 'line',
@@ -275,7 +251,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0305',
             chapter: 'ch03',
             seq: 50,
             type: 'effect',
@@ -286,7 +261,6 @@ export namespace StoryCsv {
             kind: 'shake',
         },
         {
-            id: 'n0306',
             chapter: 'ch03',
             seq: 60,
             type: 'line',
@@ -297,7 +271,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0307',
             chapter: 'ch03',
             seq: 70,
             type: 'cg',
@@ -308,7 +281,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0308',
             chapter: 'ch03',
             seq: 80,
             type: 'line',
@@ -319,7 +291,6 @@ export namespace StoryCsv {
             kind: '',
         },
         {
-            id: 'n0309',
             chapter: 'ch03',
             seq: 90,
             type: 'line',
@@ -328,6 +299,334 @@ export namespace StoryCsv {
             key: '',
             color: '',
             kind: '',
+        }
+    ];
+
+    export const FileMap: { [file: string]: Record[] } = {
+        ch01: [
+        {
+            chapter: 'ch01',
+            seq: 10,
+            type: 'bg',
+            speaker: '',
+            text: '',
+            key: 'bg_diner_dusk',
+            color: '#2b2118',
+            kind: '',
+        },
+        {
+            chapter: 'ch01',
+            seq: 20,
+            type: 'line',
+            speaker: '旁白',
+            text: '海风把旧招牌吹得吱呀作响。这家海边小餐厅，已经三年没有亮过灯。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch01',
+            seq: 30,
+            type: 'line',
+            speaker: '林夏',
+            text: '钥匙我还留着。妈妈说过，炉子只要还能点着，店就没倒。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch01',
+            seq: 40,
+            type: 'line',
+            speaker: '阿哲',
+            text: '那还等什么？面粉我来扛，菜单你来定——今晚就开张。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch01',
+            seq: 50,
+            type: 'effect',
+            speaker: '',
+            text: '',
+            key: '',
+            color: '',
+            kind: 'fade',
+        },
+        {
+            chapter: 'ch01',
+            seq: 60,
+            type: 'bg',
+            speaker: '',
+            text: '',
+            key: 'bg_kitchen_warm',
+            color: '#3a2a1c',
+            kind: '',
+        },
+        {
+            chapter: 'ch01',
+            seq: 70,
+            type: 'line',
+            speaker: '旁白',
+            text: '第一炉面包出炉时，整条街都闻到了香味。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch01',
+            seq: 80,
+            type: 'line',
+            speaker: '林夏',
+            text: '一袋面粉、一个面团、一只刚出炉的面包……原来幸福是这么具体的东西。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch01',
+            seq: 90,
+            type: 'cg',
+            speaker: '',
+            text: '',
+            key: 'cg_sign_on',
+            color: '#f0b45a',
+            kind: '',
+        },
+        {
+            chapter: 'ch01',
+            seq: 100,
+            type: 'line',
+            speaker: '旁白',
+            text: '招牌重新亮起。海畔餐厅的故事，从这一炉面包开始。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        ],
+        ch02: [
+        {
+            chapter: 'ch02',
+            seq: 10,
+            type: 'bg',
+            speaker: '',
+            text: '',
+            key: 'bg_diner_noon',
+            color: '#4a3a28',
+            kind: '',
+        },
+        {
+            chapter: 'ch02',
+            seq: 20,
+            type: 'line',
+            speaker: '旁白',
+            text: '开张第三天，一位老先生在门口站了很久。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch02',
+            seq: 30,
+            type: 'line',
+            speaker: '老先生',
+            text: '四十年前，我在这条街向妻子求的婚。她最爱喝你们家的热茶。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch02',
+            seq: 40,
+            type: 'line',
+            speaker: '林夏',
+            text: '那今天，我请您喝一杯一模一样的。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch02',
+            seq: 50,
+            type: 'effect',
+            speaker: '',
+            text: '',
+            key: '',
+            color: '',
+            kind: 'flash',
+        },
+        {
+            chapter: 'ch02',
+            seq: 60,
+            type: 'line',
+            speaker: '旁白',
+            text: '茶包落进热水，香气慢慢升起来。老人握着杯子，很久没有说话。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch02',
+            seq: 70,
+            type: 'line',
+            speaker: '阿哲',
+            text: '后厨的土豆快见底了。看来得再去码头进一批海鲜。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch02',
+            seq: 80,
+            type: 'cg',
+            speaker: '',
+            text: '',
+            key: 'cg_tea_moment',
+            color: '#d9a05b',
+            kind: '',
+        },
+        {
+            chapter: 'ch02',
+            seq: 90,
+            type: 'line',
+            speaker: '旁白',
+            text: '客人的故事，一道一道被端上桌。餐厅就这样活了过来。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        ],
+        ch03: [
+        {
+            chapter: 'ch03',
+            seq: 10,
+            type: 'bg',
+            speaker: '',
+            text: '',
+            key: 'bg_garden_night',
+            color: '#1e2a33',
+            kind: '',
+        },
+        {
+            chapter: 'ch03',
+            seq: 20,
+            type: 'line',
+            speaker: '旁白',
+            text: '露台的灯串亮起来那天，排队的人已经拐到了街角。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch03',
+            seq: 30,
+            type: 'line',
+            speaker: '阿哲',
+            text: '从一袋面粉到满座客人，我们只用了九十天。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch03',
+            seq: 40,
+            type: 'line',
+            speaker: '林夏',
+            text: '不是九十天。是妈妈在这间厨房里，站了三十年。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch03',
+            seq: 50,
+            type: 'effect',
+            speaker: '',
+            text: '',
+            key: '',
+            color: '',
+            kind: 'shake',
+        },
+        {
+            chapter: 'ch03',
+            seq: 60,
+            type: 'line',
+            speaker: '旁白',
+            text: '海浪拍上礁石，晚风把菜单翻了一页。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch03',
+            seq: 70,
+            type: 'cg',
+            speaker: '',
+            text: '',
+            key: 'cg_garden_lights',
+            color: '#efb35c',
+            kind: '',
+        },
+        {
+            chapter: 'ch03',
+            seq: 80,
+            type: 'line',
+            speaker: '林夏',
+            text: '明天，我们试试新的菜单吧。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        {
+            chapter: 'ch03',
+            seq: 90,
+            type: 'line',
+            speaker: '旁白',
+            text: '海畔餐厅，仍在营业。',
+            key: '',
+            color: '',
+            kind: '',
+        },
+        ],
+    };
+
+};
+
+export namespace StoryListCsv {
+
+    export type triggerArea = "diner" | "kitchen" | "garden";
+    export const triggerAreaList: triggerArea[] = ["diner", "kitchen", "garden"];
+
+    export interface Record {
+        id: string;
+        chapter: number;
+        title: string;
+        triggerArea: triggerArea;
+        story: StoryCsv.Record[];
+    };
+
+    export const List: Record[] = [
+        {
+            id: 'ch01',
+            chapter: 1,
+            title: '重开的招牌',
+            triggerArea: 'diner',
+            story: StoryCsv.FileMap["ch01"],
+        },
+        {
+            id: 'ch02',
+            chapter: 2,
+            title: '第一位常客',
+            triggerArea: 'kitchen',
+            story: StoryCsv.FileMap["ch02"],
+        },
+        {
+            id: 'ch03',
+            chapter: 3,
+            title: '露台的晚风',
+            triggerArea: 'garden',
+            story: StoryCsv.FileMap["ch03"],
         }
     ];
 

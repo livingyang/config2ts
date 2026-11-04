@@ -1,0 +1,5 @@
+﻿id,chapter,title,triggerArea,story
+Index,Number,String,Enum,RefSub[story.csv]
+ch01,1,重开的招牌,diner,ch01
+ch02,2,第一位常客,kitchen,ch02
+ch03,3,露台的晚风,garden,ch03
