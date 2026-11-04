@@ -112,21 +112,22 @@ dist/
 
 ### Isomorphic subdirectory merge
 
-A first-level subdirectory of the `-d` directory is merged into **one table named after the directory** when: it contains **only csv files, and every file shares identical header and type rows** (`story/ch01.csv`, `story/ch02.csv`, `story/ch03.csv` → `StoryCsv`). Data rows are concatenated in file-name order; only the first file's header/type rows are kept. A runnable example lives at [fixtures/08-story](https://github.com/livingyang/config2ts/tree/master/fixtures/08-story) (multi-chapter story: one file per chapter for easy editing, one `StoryCsv` table at runtime).
+A first-level subdirectory of the `-d` directory is merged into **one table named after the directory** when: it contains **only csv files, and every file shares identical header and type rows** (`story/ch01.csv`, `story/ch02.csv`, `story/ch03.csv` → `StoryCsv`). Data rows are concatenated in file-name order; only the first file's header/type rows are kept. A runnable example lives at [fixtures/08-story](https://github.com/livingyang/config2ts/tree/master/fixtures/08-story) (three chapters adapted from Shakespeare's *Hamlet*, public domain: one file per chapter for easy editing, one `StoryCsv` table at runtime; a fourth file `ch04` is intentionally unreferenced to show that unused sub-tables are allowed).
 
 Typical use: homogeneous tables split by chapter/language/level — many files are easier to maintain, but the runtime wants a single table. Duplicate primary keys (`Index`/`EnumIndex`) across merged rows print a warning. Subdirectories that don't qualify (mismatched header/type rows, mixed-in ini/toml, nothing convertible) are warned and skipped; other files are unaffected.
 
 ```csv
-# story/ch01.csv (ch02.csv and ch03.csv share the exact same header/type rows)
-id,chapter,seq,type,speaker,text,key,color,kind
-Index,String,Number,Enum,String,String,String,String,Enum
-n0101,ch01,10,bg,,,bg_diner_dusk,#2b2118,
-n0102,ch01,20,line,旁白,"海风把旧招牌吹得吱呀作响。",,,
+# story/ch01.csv (ch02.csv, ch03.csv and ch04.csv share the exact same header/type rows)
+seq,type,speaker,text,key,color,kind
+Number,Enum,String,String,String,String,Enum
+10,bg,,,bg_castle_terrace_night,#1b1f2a,
+20,line,旁白,"钟楼敲过十二下，露台上只剩风，和一盏快灭的火把。",,,
 ```
 
 ```typescript
-// three files merge into one namespace
-StoryCsv.List;  // 28 rows = every node of ch01 + ch02 + ch03
+// four files merge into one namespace: rows grouped per file, no flat List
+StoryCsv.FileMap["ch01"];   // every node of chapter one
+StoryCsv.refTable("ch01");  // same result, parameter typed as the File union
 ```
 
 ## Supported Config Formats
@@ -398,7 +399,7 @@ Use `RefTable[tableName]` to reference one sub-table of a merged subdirectory ta
 ```csv
 id,chapter,title,story
 Index,Number,String,RefTable[story]
-ch01,1,The Reopened Sign,ch01
+ch01,1,The Ghost on the Terrace,ch01
 ```
 
 In the generated code the `story` field is the full row list of that chapter file:

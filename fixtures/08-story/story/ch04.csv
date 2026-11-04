@@ -1,0 +1,8 @@
+﻿seq,type,speaker,text,key,color,kind
+Number,Enum,String,String,String,String,Enum
+10,bg,,,bg_graveyard_day,#3b3f38,
+20,line,旁白,"掘墓人一锹一锹，把旧土翻到新的土堆上。",,,
+30,line,掘墓人,"这骷髅在这儿躺了二十三年，我认得它。",,,
+40,line,哈姆雷特,"凯撒死了，变成泥土，也许正堵着哪家的炉子。",,,
+50,effect,,,,,fade
+60,line,旁白,"风把尘土吹过石碑，名字只剩一半。",,,

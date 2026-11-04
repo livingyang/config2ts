@@ -111,21 +111,22 @@ dist/
 
 ### 同构子目录合并
 
-`-d` 目录下的一级子目录如果满足：**内部全部是 CSV，且所有文件的表头行与类型行完全一致**，就会被合并导出为**一个与子目录同名的表**（`story/ch01.csv`、`story/ch02.csv`、`story/ch03.csv` → `StoryCsv`）。数据行按文件名字典序拼接，只有第一个文件的表头/类型行保留。可运行的完整示例见 [fixtures/08-story](https://github.com/livingyang/config2ts/tree/master/fixtures/08-story)（多章节剧情：每章一个文件独立维护，运行时只加载一张 `StoryCsv` 表）。
+`-d` 目录下的一级子目录如果满足：**内部全部是 CSV，且所有文件的表头行与类型行完全一致**，就会被合并导出为**一个与子目录同名的表**（`story/ch01.csv`、`story/ch02.csv`、`story/ch03.csv` → `StoryCsv`）。数据行按文件名字典序拼接，只有第一个文件的表头/类型行保留。可运行的完整示例见 [fixtures/08-story](https://github.com/livingyang/config2ts/tree/master/fixtures/08-story)（莎士比亚《哈姆雷特》公版剧本改编的三章剧情：每章一个文件独立维护，运行时只加载一张 `StoryCsv` 表；另有一个 `ch04` 故意不被任何表引用，演示"允许存在未被引用的子表"）。
 
 适用场景：按章节/语言/关卡拆分的同构表——文件多了不好管理，合并后又不想手工拼接。合并时若主键列（`Index`/`EnumIndex`）出现重复值会输出告警。不满足同构条件（表头或类型行不一致、混入 ini/toml、没有可转换文件）的子目录会输出告警并跳过，不影响其余文件。
 
 ```csv
-# story/ch01.csv（ch02.csv、ch03.csv 表头与类型行完全相同）
-id,chapter,seq,type,speaker,text,key,color,kind
-Index,String,Number,Enum,String,String,String,String,Enum
-n0101,ch01,10,bg,,,bg_diner_dusk,#2b2118,
-n0102,ch01,20,line,旁白,"海风把旧招牌吹得吱呀作响。",,,
+# story/ch01.csv（ch02.csv、ch03.csv、ch04.csv 表头与类型行完全相同）
+seq,type,speaker,text,key,color,kind
+Number,Enum,String,String,String,String,Enum
+10,bg,,,bg_castle_terrace_night,#1b1f2a,
+20,line,旁白,"钟楼敲过十二下，露台上只剩风，和一盏快灭的火把。",,,
 ```
 
 ```typescript
-// 三个文件合并导出为一个命名空间
-StoryCsv.List;  // 28 行 = ch01 + ch02 + ch03 的全部节点
+// 四个文件合并导出为一个命名空间：行按文件名分组，没有扁平的 List
+StoryCsv.FileMap["ch01"];   // 第一章的全部节点
+StoryCsv.refTable("ch01");  // 同一个结果，参数类型是 File 字面量联合
 ```
 
 ## 支持的配置格式
@@ -397,7 +398,7 @@ export const List: Record[] = [
 ```csv
 id,chapter,title,story
 Index,Number,String,RefTable[story]
-ch01,1,重开的招牌,ch01
+ch01,1,露台的鬼魂,ch01
 ```
 
 生成的代码中 `story` 字段即为该章节文件的全部数据行：

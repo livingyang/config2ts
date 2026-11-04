@@ -1,5 +1,5 @@
 ﻿id,chapter,title,triggerArea,story
 Index,Number,String,Enum,RefTable[story]
-ch01,1,重开的招牌,diner,ch01
-ch02,2,第一位常客,kitchen,ch02
-ch03,3,露台的晚风,garden,ch03
+ch01,1,露台的鬼魂,terrace,ch01
+ch02,2,修女院的独白,nunnery,ch02
+ch03,3,终局决斗,hall,ch03
