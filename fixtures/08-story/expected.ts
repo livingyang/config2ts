@@ -282,7 +282,7 @@ export namespace StoryCsv {
         ],
     };
 
-    export function subTable(file: File): Record[] { return FileMap[file]; }
+    export function refTable(file: File): Record[] { return FileMap[file]; }
 
 };
 
@@ -305,21 +305,21 @@ export namespace StoryListCsv {
             chapter: 1,
             title: '重开的招牌',
             triggerArea: 'diner',
-            story: StoryCsv.subTable("ch01"),
+            story: StoryCsv.refTable("ch01"),
         },
         {
             id: 'ch02',
             chapter: 2,
             title: '第一位常客',
             triggerArea: 'kitchen',
-            story: StoryCsv.subTable("ch02"),
+            story: StoryCsv.refTable("ch02"),
         },
         {
             id: 'ch03',
             chapter: 3,
             title: '露台的晚风',
             triggerArea: 'garden',
-            story: StoryCsv.subTable("ch03"),
+            story: StoryCsv.refTable("ch03"),
         }
     ];
 

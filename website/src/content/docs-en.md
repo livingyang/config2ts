@@ -186,7 +186,7 @@ fruit = 2
 | `RefEnum[table.field][]` | `TableName.FieldName[]` | References an enum array field of another table |
 | `Template[table]` | `TableName.Record` | Template inheritance: takes one row of the target table as a prototype and overrides some fields; cell `id\|key:value,...`, arrays/objects wrapped in `[..]`/`{..}`; identical to `Ref[table]` when no overrides |
 | `Template[table][]` | `TableName.Record[]` | Template array, entries separated by `;` (same as `Object[]`) |
-| `RefTable[table]` | `TableName.Record[]` | References one sub-table of a merged subdirectory table: the value is a member file name (a `FileMap` key), generating `TableName.subTable("file")` (see case 08-story) |
+| `RefTable[table]` | `TableName.Record[]` | References one sub-table of a merged subdirectory table: the value is a member file name (a member of the `File` union), generating `TableName.refTable("file")` (see case 08-story) |
 | `RefTable[table][]` | `TableName.Record[][]` | Sub-table reference array, comma-separated member file names |
 
 ### Type Notes
@@ -393,7 +393,7 @@ export const List: Record[] = [
 
 ### RefTable — reference a sub-table of a merged subdirectory table
 
-Use `RefTable[tableName]` to reference one sub-table of a merged subdirectory table: the cell holds a member file name (a `FileMap` key in the generated code), generating `TableName.subTable("file")` typed `TableName.Record[]`. Suited for "chapter directory + chapter index" layouts (see case 08-story):
+Use `RefTable[tableName]` to reference one sub-table of a merged subdirectory table: the cell holds a member file name (a member of the generated `File` union), generating `TableName.refTable("file")` typed `TableName.Record[]`. The accessor is named after the `RefTable` type itself, so it reads as "reference that sub-table" (`Ref` → `Map`, `RefEnum` → target field, `RefTable` → `refTable()`). Suited for "chapter directory + chapter index" layouts (see case 08-story):
 
 ```csv
 id,chapter,title,story
@@ -410,14 +410,14 @@ export interface Record {
 
 export const List: Record[] = [
     {
-        story: StoryCsv.subTable("ch01"),
+        story: StoryCsv.refTable("ch01"),
     },
 ];
 ```
 
 > The merged table needs no `Index` column — the member file name is the sub-table key. It also skips the flat `List` (it would duplicate every row) and exports only the per-file `FileMap`. RefTable targets take part in topological sorting, so the referenced merged table is always emitted first.
 >
-> **Validity constraint**: the merged table also emits a `File` literal union (`"ch01" | "ch02" | ...`) plus a `subTable(file: File)` accessor, so an unknown file name in a `RefTable` cell is a tsc compile error (argument type mismatch, independent of the `strict` flag). Conversion also warns and lists the valid file names, catching the mistake without a compile step.
+> **Validity constraint**: the merged table also emits a `File` literal union (`"ch01" | "ch02" | ...`) plus a `refTable(file: File)` accessor, so an unknown file name in a `RefTable` cell is a tsc compile error (argument type mismatch, independent of the `strict` flag). Conversion also warns and lists the valid file names, catching the mistake without a compile step.
 
 ### Reference Example
 

@@ -27,12 +27,12 @@ export const FileMap: { [file in File]: Record[] } = {
     ch03: [ /* rows of ch03.csv */ ],
 };
 
-export function subTable(file: File): Record[] { return FileMap[file]; }
+export function refTable(file: File): Record[] { return FileMap[file]; }
 ```
 
 Other tables reference a whole sub-table with `RefTable[story]`: the cell
 holds a file name (`ch01`), the generated field is typed `StoryCsv.Record[]`
-and resolves to `StoryCsv.subTable("ch01")`. The array form `RefTable[story][]`
+and resolves to `StoryCsv.refTable("ch01")`. The array form `RefTable[story][]`
 holds several file names and resolves to `StoryCsv.Record[][]`.
 
 Because the parameter type is the literal union, a `RefTable` value naming a

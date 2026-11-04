@@ -320,10 +320,10 @@ function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[
         const refTable = parseRefTable(convert[field])!;
         const refModuleName = changeCase.pascalCase(refTable.refModule);
         if (refTable.isArray) {
-          const names = (value as string[]).map((name) => `${refModuleName}.subTable(${JSON.stringify(name)})`).join(",");
+          const names = (value as string[]).map((name) => `${refModuleName}.refTable(${JSON.stringify(name)})`).join(",");
           rowString += `            ${serializeField(field)}: [${names}],\n`;
         } else {
-          rowString += `            ${serializeField(field)}: ${refModuleName}.subTable(${JSON.stringify(value)}),\n`;
+          rowString += `            ${serializeField(field)}: ${refModuleName}.refTable(${JSON.stringify(value)}),\n`;
         }
       } else if (parseTemplate(convert[field])) {
         const templateType = parseTemplate(convert[field])!;
@@ -379,7 +379,7 @@ function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[
     // directly: indexing an unknown literal key is only an error under
     // noImplicitAny, while passing a wrong argument to a `File` parameter is
     // an error under every tsc flag combination.
-    template += "    export function subTable(file: File): Record[] { return FileMap[file]; }\n\n";
+    template += "    export function refTable(file: File): Record[] { return FileMap[file]; }\n\n";
   }
   if (indexField != null) {
     template += "    export const Map: { [id: string]: Record } = {};\n";
