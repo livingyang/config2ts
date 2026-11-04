@@ -1,0 +1,7 @@
+﻿key,text
+Index,String
+item.apple.name,りんご
+item.bread.name,パン
+item.tea.name,温かいお茶
+ui.start,開店する
+ui.inventory,倉庫

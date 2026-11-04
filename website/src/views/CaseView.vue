@@ -1,12 +1,22 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { findCase, fixtures } from "../fixtures";
+import { t } from "../i18n";
 import CodeBlock from "../components/CodeBlock.vue";
 import CsvTable from "../components/CsvTable.vue";
 
 const props = defineProps<{ caseId: string }>();
 
 const current = computed(() => findCase(props.caseId) ?? fixtures[0] ?? null);
+
+// Titles/descriptions come from the trilingual table (website/src/i18n/ui.csv);
+// the fixture README description is the fallback for any untranslated case.
+const title = computed(() => (current.value ? t(`case.${current.value.id}.title`) : ""));
+const description = computed(() => {
+  if (!current.value) return "";
+  const localized = t(`case.${current.value.id}.desc`);
+  return localized === `case.${current.value.id}.desc` ? current.value.description : localized;
+});
 
 function isTable(name: string): boolean {
   return /\.(csv|ini|toml)$/.test(name);
@@ -15,11 +25,11 @@ function isTable(name: string): boolean {
 
 <template>
   <div v-if="current">
-    <h1 class="case-title">{{ current.title }}</h1>
-    <p class="case-desc">{{ current.description }}</p>
+    <h1 class="case-title">{{ title }}</h1>
+    <p class="case-desc">{{ description }}</p>
 
     <section class="panel">
-      <h2 class="panel-title">输入 · 源配置表</h2>
+      <h2 class="panel-title">{{ t("case.input.title") }}</h2>
       <div v-for="f in current.files" :key="f.name" class="stack">
         <div class="file-label">{{ f.name }}</div>
         <CsvTable v-if="isTable(f.name)" :filename="f.name" :raw="f.raw" />
@@ -27,10 +37,10 @@ function isTable(name: string): boolean {
       </div>
     </section>
 
-    <div class="arrow">↓ 转换</div>
+    <div class="arrow">{{ t("case.arrow") }}</div>
 
     <section class="panel">
-      <h2 class="panel-title">输出 · 生成 TypeScript</h2>
+      <h2 class="panel-title">{{ t("case.output.title") }}</h2>
       <CodeBlock filename="expected.ts" :code="current.expected" />
     </section>
   </div>

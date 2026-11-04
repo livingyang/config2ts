@@ -1,47 +1,60 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { RouterLink, RouterView, useRoute } from "vue-router";
+import { computed } from "vue";
 import { fixtures } from "./fixtures";
+import { docsLang, t } from "./i18n";
+import LanguageSelect from "./components/LanguageSelect.vue";
 
 const route = useRoute();
 
 const inCaseView = computed(() => route.name === "case");
 const activeCaseId = computed(() => (route.name === "case" ? String(route.params.caseId) : ""));
-
-const navItems = computed(() => [
-  { to: "/docs/zh", label: "文档 · 中文" },
-  { to: "/docs/en", label: "文档 · English" },
-  { to: { name: "case", params: { caseId: fixtures[0]?.id ?? "" } }, label: "功能用例" },
-]);
-
-function isActive(to: (typeof navItems.value)[number]["to"]): boolean {
-  if (typeof to === "object") return inCaseView.value;
-  return route.path === to;
-}
+const docsTarget = computed(() => `/docs/${docsLang()}`);
 </script>
 
 <template>
   <div class="layout">
     <header class="topbar">
-      <RouterLink class="brand" to="/docs/zh">
+      <RouterLink class="brand" :to="docsTarget">
         <span class="logo">config2ts</span>
-        <span class="tagline">配置表 → 类型安全 TypeScript</span>
+        <span class="tagline">{{ t("site.tagline") }}</span>
       </RouterLink>
+
       <nav class="nav">
+        <RouterLink class="nav-item" :class="{ active: route.name === 'docs' }" :to="docsTarget">
+          {{ t("nav.docs") }}
+        </RouterLink>
         <RouterLink
-          v-for="item in navItems"
-          :key="item.label"
           class="nav-item"
-          :class="{ active: isActive(item.to) }"
-          :to="item.to"
-        >{{ item.label }}</RouterLink>
+          :class="{ active: inCaseView }"
+          :to="{ name: 'case', params: { caseId: fixtures[0]?.id ?? '' } }"
+        >
+          {{ t("nav.cases") }}
+        </RouterLink>
       </nav>
-      <a class="gh-link" href="https://github.com/livingyang/config2ts" target="_blank" rel="noreferrer">GitHub →</a>
+
+      <div class="actions">
+        <LanguageSelect />
+        <a
+          class="icon-btn"
+          href="https://github.com/livingyang/config2ts"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="GitHub"
+          title="GitHub"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path
+              d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
+            />
+          </svg>
+        </a>
+      </div>
     </header>
 
     <div class="body">
       <nav v-if="inCaseView" class="sidebar">
-        <div class="side-title">测试用例</div>
+        <div class="side-title">{{ t("case.sidebar.title") }}</div>
         <RouterLink
           v-for="c in fixtures"
           :key="c.id"
@@ -49,7 +62,7 @@ function isActive(to: (typeof navItems.value)[number]["to"]): boolean {
           :class="{ active: activeCaseId === c.id }"
           :to="{ name: 'case', params: { caseId: c.id } }"
         >{{ c.id }}</RouterLink>
-        <p class="side-note">以下输入与输出与单元测试中的 golden file 完全一致，由 <code>fixtures:regen</code> 生成。</p>
+        <p class="side-note">{{ t("case.sidebar.note") }}</p>
       </nav>
 
       <main class="content" :class="{ wide: inCaseView }">
@@ -114,16 +127,28 @@ function isActive(to: (typeof navItems.value)[number]["to"]): boolean {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   font-weight: 600;
 }
-.gh-link {
-  font-size: 13px;
-  color: var(--text);
-  text-decoration: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 4px 12px;
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.gh-link:hover {
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+}
+.icon-btn:hover {
+  color: var(--text);
   border-color: var(--accent);
+}
+.icon-btn svg {
+  width: 16px;
+  height: 16px;
 }
 .body {
   display: flex;

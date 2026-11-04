@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { t } from "../i18n";
 
 const props = defineProps<{ filename: string; code: string; lang?: string }>();
 
@@ -21,8 +22,8 @@ async function copy(): Promise<void> {
   <div class="code-block">
     <div class="code-bar">
       <span class="code-name">{{ props.filename }}</span>
-      <span class="code-meta">{{ lineCount }} 行</span>
-      <button class="copy-btn" type="button" @click="copy">{{ copied ? "已复制" : "复制" }}</button>
+      <span class="code-meta">{{ lineCount }} {{ t("code.lines") }}</span>
+      <button class="copy-btn" type="button" @click="copy">{{ copied ? t("code.copied") : t("code.copy") }}</button>
     </div>
     <pre><code>{{ props.code }}</code></pre>
   </div>

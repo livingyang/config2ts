@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from "vue-router";
 import DocsView from "./views/DocsView.vue";
 import CaseView from "./views/CaseView.vue";
 import { fixtures } from "./fixtures";
+import { docsLang } from "./i18n";
 
 const firstCase = fixtures[0]?.id ?? "";
 
@@ -11,7 +12,8 @@ const firstCase = fixtures[0]?.id ?? "";
 export const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: "/", redirect: "/docs/zh" },
+    // Land on the docs in the visitor's remembered language (ja → English docs).
+    { path: "/", redirect: () => `/docs/${docsLang()}` },
     { path: "/docs/:lang(zh|en)", name: "docs", component: DocsView, props: true },
     { path: "/case/:caseId", name: "case", component: CaseView, props: true },
     { path: "/:pathMatch(.*)*", redirect: "/docs/zh" },

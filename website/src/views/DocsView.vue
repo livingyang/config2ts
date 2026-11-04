@@ -1,20 +1,36 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { renderMarkdown } from "../markdown";
+import { lang as uiLang, t } from "../i18n";
 import docsEn from "../content/docs-en.md?raw";
 import docsZh from "../content/docs-zh.md?raw";
 
 const props = defineProps<{ lang: "zh" | "en" }>();
 
 const html = computed(() => renderMarkdown(props.lang === "zh" ? docsZh : docsEn, `/docs/${props.lang}`));
+
+// Docs are translated to zh/en only; Japanese visitors get the English text
+// with an explanation rather than a silently mixed-language page.
+const showPendingNote = computed(() => uiLang.value === "ja");
 </script>
 
 <template>
+  <div v-if="showPendingNote" class="pending-note">{{ t("docs.pending") }}</div>
   <!-- Content is our own committed markdown, not user input — v-html is safe here. -->
   <article class="docs" v-html="html"></article>
 </template>
 
 <style scoped>
+.pending-note {
+  margin: 0 0 16px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  background: var(--hover);
+  color: var(--muted);
+  font-size: 12.5px;
+}
 .docs {
   max-width: 860px;
   font-size: 14.5px;
