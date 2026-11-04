@@ -489,23 +489,22 @@ Generates `skills: SkillCsv.Record[]`, data is `[SkillCsv.Map["101"], SkillCsv.M
 
 Principle: **store only translation keys and templates in config tables, never hard-coded text; all values go through named placeholders filled at runtime.**
 
-One CSV per language ([lang-en.csv](https://github.com/livingyang/config2ts/blob/master/config/lang-en.csv) / [lang-zh.csv](https://github.com/livingyang/config2ts/blob/master/config/lang-zh.csv)), key convention `{type}.{id}.{field}`:
+Default: **one table, one column per language** ([lang.csv](https://github.com/livingyang/config2ts/blob/master/config/lang.csv)) — one row per key, key convention `{type}.{id}.{field}`:
 
 ```csv
-id,text
-Index,String
-skill.101.name,Fireball
-skill.101.desc,"Deals {damage} fire damage to enemies within {range} meters."
+id,zh,en
+Index,String,String
+skill.101.name,火球术,Fireball
+skill.101.desc,"对 {range} 米内的敌人造成 {damage} 点火焰伤害。","Deals {damage} fire damage to an enemy within {range}m."
 ```
 
-The two files share the same key set and generate two namespaces of identical shape (`LangEnCsv.Map[key].text` / `LangZhCsv.Map[key].text`). At runtime a single helper does the lookup and placeholder fill (placeholder names match the skill params / level table field names):
+That generates a single namespace `LangCsv` where every row carries all languages as typed fields (`LangCsv.Map[key].zh` / `.en`). At runtime a single helper picks the column for the active locale and fills placeholders (placeholder names match the skill params / level table field names):
 
 ```typescript
-const tables = { en: LangEnCsv, zh: LangZhCsv } as const;
-let locale: keyof typeof tables = "en";
+let locale: "zh" | "en" = "en";
 
 export function t(key: string, params?: Record<string, string | number>): string {
-  let tpl = tables[locale].Map[key]?.text ?? key;      // fall back to key on missing translation
+  let tpl = LangCsv.Map[key]?.[locale] || LangCsv.Map[key]?.en || key;  // fall back to key on missing translation
   if (params) {
     tpl = tpl.replace(/\{(\w+)\}/g, (_, k) => k in params ? String(params[k]) : "");
   }
@@ -515,11 +514,16 @@ export function t(key: string, params?: Record<string, string | number>): string
 t(`skill.${skill.id}.desc`, lv);  // lv from the skilllevel table → "Deals 150 fire damage to enemies within 5 meters."
 ```
 
+Why single-table by default: adding a key touches one row, a missing translation shows up as an empty cell on that same row, and translations are reviewed in the same diff as the feature; with a fixed, small language set it is the least ceremony.
+
+> **Alternative: one table per language** (`lang-zh.csv` / `lang-en.csv`, aligned by key, one namespace per language). Better when the language set is open-ended (files added at runtime) or when translators maintain their own files; the cost is that a key's translations are spread across several files and missing ones only show up in a script check.
+
 Conventions:
 
 - One template shared across a skill's levels; level-specific copy adds a key layer (e.g. `skill.101.desc.lv2`).
 - **Cells support real line breaks** (Alt+Enter in Excel, quote-wrapped multi-line cells in CSV): `String` field line breaks are kept as `\n`; in structural fields a line break is equivalent to a separator (a line break between array elements / key:value pairs equals a comma, a line break between template-array entries equals a semicolon), so designers can lay out "one per line"; only scalar fields like Number/Boolean/Enum/single Ref don't support line breaks (warned at conversion).
-- An empty cell for a missing translation → `text: ''`, detectable in the helper for fallback/warning.
+- Name the language columns with the locale codes themselves (`zh` / `en` / `ja`) so they line up with the runtime locale — no aliases like `chinese`.
+- An empty cell for a missing translation → `en: ''`, detectable in the helper for fallback/warning.
 - All player-facing text — enum display names, item names, buff names — goes through the language table uniformly.
 
 ### Scenario 3: Base Row + Variants (Template Inheritance)

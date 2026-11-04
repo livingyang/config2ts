@@ -185,26 +185,14 @@ export namespace UiCsv {
             ja: 'including sections.',
         },
         {
-            key: 'case.07-i18n.title',
-            zh: '07 · 多语言文案（按语言拆表）',
-            en: '07 · Localized text (file per language)',
-            ja: '07 · 多言語テキスト（言語ごと）',
+            key: 'case.07-i18n-columns.title',
+            zh: '07 · 多语言文案',
+            en: '07 · Localized text',
+            ja: '07 · 多言語テキスト',
         },
         {
-            key: 'case.07-i18n.desc',
-            zh: '按语言拆文件、同一 key 对齐的多语言文案表，切换语言即换表。',
-            en: 'One table per language aligned by the same keys; switching language switches the table.',
-            ja: '言語ごとにファイル分割し、同じ key で対応させた多言語テキスト表。',
-        },
-        {
-            key: 'case.08-i18n-columns.title',
-            zh: '08 · 多语言文案（单表多列）',
-            en: '08 · Localized text (column per language)',
-            ja: '08 · 多言語テキスト（列ごと）',
-        },
-        {
-            key: 'case.08-i18n-columns.desc',
-            zh: '单表三列：key + zh / en / ja 同在一行，运行时按语言取列，缺译一眼可见；占位符 {name} 原样保留。',
+            key: 'case.07-i18n-columns.desc',
+            zh: '单表多列：key + zh / en / ja 同在一行，运行时按语言取列，缺译一眼可见；占位符 {name} 原样保留。',
             en: 'One table',
             ja: 'one column per language: every translation of a key sits on one row',
         }

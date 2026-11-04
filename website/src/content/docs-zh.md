@@ -485,23 +485,22 @@ Index,String,Ref[skill.csv][]
 
 原则：**配置表里只放翻译 key 和模板，不放死文本；数值全部走具名占位符，运行时填充。**
 
-每种语言一个 CSV（[lang-en.csv](https://github.com/livingyang/config2ts/blob/master/config/lang-en.csv) / [lang-zh.csv](https://github.com/livingyang/config2ts/blob/master/config/lang-zh.csv)），key 约定 `{类型}.{id}.{字段}`：
+默认用**单表多列**（[lang.csv](https://github.com/livingyang/config2ts/blob/master/config/lang.csv)）：一行一个 key，每种语言占一列，key 约定 `{类型}.{id}.{字段}`：
 
 ```csv
-id,text
-Index,String
-skill.101.name,火球术
-skill.101.desc,"对 {range} 米内的敌人造成 {damage} 点火焰伤害。"
+id,zh,en
+Index,String,String
+skill.101.name,火球术,Fireball
+skill.101.desc,"对 {range} 米内的敌人造成 {damage} 点火焰伤害。","Deals {damage} fire damage to an enemy within {range}m."
 ```
 
-两文件 key 集合保持一致，生成两个形状相同的命名空间（`LangZhCsv.Map[key].text` / `LangEnCsv.Map[key].text`）。运行时一个 helper 完成查表与占位符填充（占位符名与技能 params/等级表字段名一致）：
+生成单个命名空间 `LangCsv`，每行同时带着所有语言的字段（`LangCsv.Map[key].zh` / `.en`）。运行时一个 helper 按当前语言取列并填充占位符（占位符名与技能 params/等级表字段名一致）：
 
 ```typescript
-const tables = { en: LangEnCsv, zh: LangZhCsv } as const;
-let locale: keyof typeof tables = "zh";
+let locale: "zh" | "en" = "zh";
 
 export function t(key: string, params?: Record<string, string | number>): string {
-  let tpl = tables[locale].Map[key]?.text ?? key;      // 缺翻译回退到 key
+  let tpl = LangCsv.Map[key]?.[locale] || LangCsv.Map[key]?.zh || key;  // 缺翻译回退
   if (params) {
     tpl = tpl.replace(/\{(\w+)\}/g, (_, k) => k in params ? String(params[k]) : "");
   }
@@ -511,11 +510,16 @@ export function t(key: string, params?: Record<string, string | number>): string
 t(`skill.${skill.id}.desc`, lv);  // lv 来自 skilllevel 表 → "对 5 米内的敌人造成 150 点火焰伤害。"
 ```
 
+为什么默认单表：加一个 key 只动一行、漏译在同一行上空着就能看见、翻译与配置在同一个 diff 里 review；语言集合固定且数量少时最省心。
+
+> **备选：按语言拆表**（`lang-zh.csv` / `lang-en.csv`，同 key 对齐，每语言生成一个命名空间）。语言集合开放（运行时按语言增删文件）、或译者独立维护自己的文件时更合适；代价是同一个 key 的翻译散在多份文件里，漏译需要脚本检查。
+
 约定：
 
 - 同一技能各等级共用一条模板，数值来自等级表；等级专属文案再加 key 层级（如 `skill.101.desc.lv2`）
 - **单元格支持真实换行**（Excel 中 Alt+Enter，CSV 中用双引号包裹多行单元格）：`String` 字段换行保留为 `\n`；结构化字段中换行等价于分隔符（数组元素/键值对之间换行等同逗号，模板数组中每行一个模板条目等同分号），策划可以按"每行一条"排版；仅 Number/Boolean/Enum/单值 Ref 等标量字段不支持换行（转换时告警）
-- 某语言缺翻译时单元格为空 → `text: ''`，可在 helper 中检测并回退/告警
+- 列名直接用语言代码（`zh` / `en` / `ja`），与运行时 locale 对齐，不要用 `chinese` 这类别名
+- 某语言缺翻译时该单元格为空 → `zh: ''`，可在 helper 中检测并回退/告警
 - 枚举显示名、道具名、Buff 名等所有面向玩家的文本统一走语言表
 
 ### 场景三：基础行 + 变体（Template 模板继承）

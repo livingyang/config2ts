@@ -193,100 +193,59 @@ export const IniFileIni = {
     },
 };
 
-export namespace LangEnCsv {
+export namespace LangCsv {
 
     export interface Record {
         id: string;
-        text: string;
+        zh: string;
+        en: string;
     };
 
     export const List: Record[] = [
         {
             id: 'skill.101.name',
-            text: 'Fireball',
+            zh: '火球术',
+            en: 'Fireball',
         },
         {
             id: 'skill.101.desc',
-            text: 'Deals {damage} fire damage to an enemy within {range}m.',
+            zh: '对 {range} 米内的敌人造成 {damage} 点火焰伤害。',
+            en: 'Deals {damage} fire damage to an enemy within {range}m.',
         },
         {
             id: 'skill.102.name',
-            text: 'Heal',
+            zh: '治疗术',
+            en: 'Heal',
         },
         {
             id: 'skill.102.desc',
-            text: 'Restores {heal} HP to a friendly target.',
+            zh: '为友方目标恢复 {heal} 点生命值。',
+            en: 'Restores {heal} HP to a friendly target.',
         },
         {
             id: 'skill.103.name',
-            text: 'Lightning',
+            zh: '闪电链',
+            en: 'Lightning',
         },
         {
             id: 'skill.103.desc',
-            text: 'Deals {damage} thunder damage, chaining up to {chain} targets.',
+            zh: '造成 {damage} 点雷电伤害，最多连锁 {chain} 个目标。',
+            en: 'Deals {damage} thunder damage, chaining up to {chain} targets.',
         },
         {
             id: 'unit.1.name',
-            text: 'Hero One',
+            zh: '英雄一号',
+            en: 'Hero One',
         },
         {
             id: 'unit.1.desc',
-            text: 'A brave hero.\nCharges into battle first.',
+            zh: '勇敢的英雄。\n总是率先冲锋。',
+            en: 'A brave hero.\nCharges into battle first.',
         },
         {
             id: 'unit.2.name',
-            text: 'Hero Two',
-        }
-    ];
-
-    export const Map: { [id: string]: Record } = {};
-    for (const v of List) { Map[v.id] = v; };
-
-};
-
-export namespace LangZhCsv {
-
-    export interface Record {
-        id: string;
-        text: string;
-    };
-
-    export const List: Record[] = [
-        {
-            id: 'skill.101.name',
-            text: '火球术',
-        },
-        {
-            id: 'skill.101.desc',
-            text: '对 {range} 米内的敌人造成 {damage} 点火焰伤害。',
-        },
-        {
-            id: 'skill.102.name',
-            text: '治疗术',
-        },
-        {
-            id: 'skill.102.desc',
-            text: '为友方目标恢复 {heal} 点生命值。',
-        },
-        {
-            id: 'skill.103.name',
-            text: '闪电链',
-        },
-        {
-            id: 'skill.103.desc',
-            text: '造成 {damage} 点雷电伤害，最多连锁 {chain} 个目标。',
-        },
-        {
-            id: 'unit.1.name',
-            text: '英雄一号',
-        },
-        {
-            id: 'unit.1.desc',
-            text: '勇敢的英雄。\n总是率先冲锋。',
-        },
-        {
-            id: 'unit.2.name',
-            text: '英雄二号',
+            zh: '英雄二号',
+            en: 'Hero Two',
         }
     ];
 

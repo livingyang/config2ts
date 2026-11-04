@@ -1,0 +1,13 @@
+﻿id,zh,en
+Index,String,String
+skill.101.name,火球术,Fireball
+skill.101.desc,"对 {range} 米内的敌人造成 {damage} 点火焰伤害。","Deals {damage} fire damage to an enemy within {range}m."
+skill.102.name,治疗术,Heal
+skill.102.desc,"为友方目标恢复 {heal} 点生命值。","Restores {heal} HP to a friendly target."
+skill.103.name,闪电链,Lightning
+skill.103.desc,"造成 {damage} 点雷电伤害，最多连锁 {chain} 个目标。","Deals {damage} thunder damage, chaining up to {chain} targets."
+unit.1.name,英雄一号,Hero One
+unit.1.desc,"勇敢的英雄。
+总是率先冲锋。","A brave hero.
+Charges into battle first."
+unit.2.name,英雄二号,Hero Two
