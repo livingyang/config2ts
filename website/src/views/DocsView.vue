@@ -6,7 +6,7 @@ import docsZh from "../content/docs-zh.md?raw";
 
 const props = defineProps<{ lang: "zh" | "en" }>();
 
-const html = computed(() => renderMarkdown(props.lang === "zh" ? docsZh : docsEn));
+const html = computed(() => renderMarkdown(props.lang === "zh" ? docsZh : docsEn, `/docs/${props.lang}`));
 </script>
 
 <template>

@@ -12,7 +12,8 @@
     "d3-dsv": "^3.0.1",
     "markdown-it": "^15.0.3",
     "markdown-it-anchor": "^10.0.0",
-    "vue": "^3.5.13"
+    "vue": "^3.5.13",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@types/d3-dsv": "^3.0.7",

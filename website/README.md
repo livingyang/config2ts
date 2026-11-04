@@ -9,6 +9,10 @@ Vue3 + Vite 展示站：把 `fixtures/` 里与单元测试共用的 `(源表, ex
 - 构建：`npm run build`，产物输出到 `../docs/`（GitHub Pages 根路径
   `/config2ts/`，见 `vite.config.ts` 的 `base`；`public/.nojekyll` 随构建复制，
   跳过 Jekyll 处理）
+- 路由：vue-router 4 `createWebHashHistory()`（GitHub Pages 无需 404 重写）；
+  `#/docs/zh`、`#/docs/en`、`#/case/<id>`，`/` 重定向到中文文档
+- 文档页内锚点：渲染时把 `#quick-start` 重写为 `#/docs/zh#quick-start`，由
+  `scrollBehavior` 负责滚动，路由与锚点共存
 - 文档内容在 `src/content/docs-{zh,en}.md`（原 `docs/index*.md` 平移而来），
   经 markdown-it 渲染，heading 锚点与 GitHub slugging 规则一致
 - dev server 通过 `server.fs.allow` 允许读取 website/ 之外的 fixtures 目录
