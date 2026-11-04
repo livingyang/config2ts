@@ -882,13 +882,6 @@ function collectCsvReferencesFromContent(csvString: string): string[] {
   return references;
 }
 
-function collectCsvReferences(filePath: string): string[] {
-  if (GetFileExt(filePath) !== "csv") {
-    return [];
-  }
-  return collectCsvReferencesFromContent(readConfigFile(filePath));
-}
-
 // Sub-table binding for a merged subdirectory unit: one entry per member
 // file, binding the file name (the exported FileMap key) to the number of
 // data rows it contributed. Referenced from other tables via RefTable[<name>].
@@ -914,14 +907,93 @@ export interface ConvertUnit {
   subTables?: SubTableInfo[];
 }
 
-function makeFileUnit(filePath: string): ConvertUnit {
+// Resolve a table reference to a full unit name. References are written
+// without the extension by default ("Ref[skill]" -> "skill.csv"), matching
+// how table names read in generated code (pascalCase("skill.csv") ===
+// "SkillCsv"). Exact unit names still win, so legacy refs that spell out the
+// extension ("Ref[skill.csv]") keep working; a stem shared by several units
+// (e.g. skill.csv + skill.ini) is ambiguous and reported.
+export function resolveTableName(ref: string, names: Iterable<string>): string | null {
+  const nameList = Array.from(names);
+  if (nameList.includes(ref)) {
+    return ref;
+  }
+  const stemMatches = nameList.filter((name) => path.parse(name).name === ref);
+  if (stemMatches.length === 1) {
+    return stemMatches[0];
+  }
+  if (stemMatches.length > 1) {
+    console.warn(`[config2ts] warning: table reference "${ref}" is ambiguous (${stemMatches.join(", ")}), write the full file name in the ref`);
+  }
+  return null;
+}
+
+// Rewrite the type row's table references from stem form to full unit names,
+// so downstream steps (namespace derivation, import lines, dependency
+// sorting) keep matching refs against unit names exactly. The content is only
+// re-serialized when something actually changed.
+function normalizeCsvRefs(content: string, allNames: Set<string>): string {
+  if (allNames.size === 0) {
+    return content;
+  }
+  const rows = csvParseRows(content);
+  if (rows.length < 2) {
+    return content;
+  }
+  let changed = false;
+  rows[1] = rows[1].map((cell) => {
+    const ref = parseRef(cell);
+    if (ref) {
+      const resolved = resolveTableName(ref.refModule, allNames);
+      if (resolved) {
+        changed = true;
+        return `Ref[${resolved}]` + (ref.isArray ? "[]" : "");
+      }
+      return cell;
+    }
+    const refEnum = parseRefEnum(cell);
+    if (refEnum) {
+      const resolved = resolveTableName(refEnum.refModule, allNames);
+      if (resolved) {
+        changed = true;
+        return `RefEnum[${resolved}.${refEnum.refField}]` + (refEnum.isArray ? "[]" : "");
+      }
+      return cell;
+    }
+    const refTable = parseRefTable(cell);
+    if (refTable) {
+      const resolved = resolveTableName(refTable.refModule, allNames);
+      if (resolved) {
+        changed = true;
+        return `RefTable[${resolved}]` + (refTable.isArray ? "[]" : "");
+      }
+      return cell;
+    }
+    const template = parseTemplate(cell);
+    if (template) {
+      const resolved = resolveTableName(template.refModule, allNames);
+      if (resolved) {
+        changed = true;
+        return `Template[${resolved}]` + (template.isArray ? "[]" : "");
+      }
+      return cell;
+    }
+    return cell;
+  });
+  return changed ? csvFormatRows(rows) : content;
+}
+
+function makeFileUnit(filePath: string, allNames?: Set<string>): ConvertUnit {
   const name = path.basename(filePath);
+  const ext = GetFileExt(name);
+  const content = readConfigFile(filePath);
+  const normalized = ext === "csv" && allNames ? normalizeCsvRefs(content, allNames) : content;
   return {
     name,
-    ext: GetFileExt(name),
-    content: readConfigFile(filePath),
+    ext,
+    content: normalized,
     sourcePaths: [filePath],
-    refs: collectCsvReferences(filePath),
+    refs: ext === "csv" ? collectCsvReferencesFromContent(normalized) : [],
   };
 }
 
@@ -930,7 +1002,7 @@ function makeFileUnit(filePath: string): ConvertUnit {
 // directory ("<dir>.csv" -> pascalCase -> "<Dir>Csv"). Data rows are
 // concatenated in file-name order, so per-chapter/per-language splits stay
 // manageable on disk while the runtime sees a single table.
-function tryMergeSubdir(dir: string, dirName: string): ConvertUnit | null {
+function tryMergeSubdir(dir: string, dirName: string, allNames?: Set<string>): ConvertUnit | null {
   const entries = fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isFile());
   const files = entries
     .map((e) => path.join(dir, e.name))
@@ -976,21 +1048,33 @@ function tryMergeSubdir(dir: string, dirName: string): ConvertUnit | null {
     name: path.parse(f).name,
     rowCount: Math.max(0, csvParseRows(contents[i]).length - 2),
   }));
+  const mergedRefsContent = allNames ? normalizeCsvRefs(mergedContent, allNames) : mergedContent;
   return {
     name,
     ext: "csv",
-    content: mergedContent,
+    content: mergedRefsContent,
     sourcePaths: files,
-    refs: collectCsvReferencesFromContent(mergedContent),
+    refs: collectCsvReferencesFromContent(mergedRefsContent),
     subTables,
   };
 }
 
 // Resolve a config directory into convert units: every convertible file
 // becomes one unit; every subdirectory is merged into a single unit when its
-// csv files are homogeneous (warned and skipped otherwise).
+// csv files are homogeneous (warned and skipped otherwise). Unit names are
+// predicted first, so extension-less table refs in the type rows can be
+// resolved before dependency collection.
 export function collectConvertUnits(dir: string): ConvertUnit[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1));
+  const allNames = new Set<string>();
+  for (const entry of entries) {
+    if (entry.isFile()) {
+      if (Convert[GetFileExt(entry.name)] == null) continue;
+      allNames.add(entry.name);
+    } else if (entry.isDirectory()) {
+      allNames.add(entry.name.endsWith(".csv") ? entry.name : entry.name + ".csv");
+    }
+  }
   const units: ConvertUnit[] = [];
   const takenNames = new Set<string>();
   const take = function (unit: ConvertUnit): void {
@@ -1004,9 +1088,9 @@ export function collectConvertUnits(dir: string): ConvertUnit[] {
     const full = path.join(dir, entry.name);
     if (entry.isFile()) {
       if (Convert[GetFileExt(entry.name)] == null) continue;
-      take(makeFileUnit(full));
+      take(makeFileUnit(full, allNames));
     } else if (entry.isDirectory()) {
-      const merged = tryMergeSubdir(full, entry.name);
+      const merged = tryMergeSubdir(full, entry.name, allNames);
       if (merged) take(merged);
     }
   }
@@ -1091,7 +1175,8 @@ export function GetTsStringFromUnits(units: ConvertUnit[]): string {
 }
 
 export function GetTsStringFromFileList(fileList: string[]): string {
-  return GetTsStringFromUnits(fileList.map(makeFileUnit));
+  const allNames = new Set(fileList.map((filePath) => path.basename(filePath)));
+  return GetTsStringFromUnits(fileList.map((filePath) => makeFileUnit(filePath, allNames)));
 }
 
 export function GetValidFileList(fileList: string[]): string[] {

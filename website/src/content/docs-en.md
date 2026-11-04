@@ -180,12 +180,14 @@ fruit = 2
 | `Enum[]` | union type array | Enum array |
 | `Object` | object type | Parses `key:value,key:value`, infers value types |
 | `Object[]` | object array | Objects separated by `;`; inside an object `key:value` separated by `,`; n separators → n+1 objects, empty object slots become `{}` |
-| `Ref[file]` | `TableName.Record` | References a whole row of another table; value is the target row's Index, generates `TableName.Map["id"]` |
-| `Ref[file][]` | `TableName.Record[]` | Reference array, comma-separated Indexes, generates `[TableName.Map["id"],...]` |
-| `RefEnum[file.field]` | `TableName.FieldName` | References an enum field of another table |
-| `RefEnum[file.field][]` | `TableName.FieldName[]` | References an enum array field of another table |
-| `Template[file]` | `TableName.Record` | Template inheritance: takes one row of the target table as a prototype and overrides some fields; cell `id\|key:value,...`, arrays/objects wrapped in `[..]`/`{..}`; identical to `Ref[file]` when no overrides |
-| `Template[file][]` | `TableName.Record[]` | Template array, entries separated by `;` (same as `Object[]`) |
+| `Ref[table]` | `TableName.Record` | References a whole row of another table; value is the target row's Index, generates `TableName.Map["id"]` |
+| `Ref[table][]` | `TableName.Record[]` | Reference array, comma-separated Indexes, generates `[TableName.Map["id"],...]` |
+| `RefEnum[table.field]` | `TableName.FieldName` | References an enum field of another table |
+| `RefEnum[table.field][]` | `TableName.FieldName[]` | References an enum array field of another table |
+| `Template[table]` | `TableName.Record` | Template inheritance: takes one row of the target table as a prototype and overrides some fields; cell `id\|key:value,...`, arrays/objects wrapped in `[..]`/`{..}`; identical to `Ref[table]` when no overrides |
+| `Template[table][]` | `TableName.Record[]` | Template array, entries separated by `;` (same as `Object[]`) |
+| `RefTable[table]` | `TableName.Record[]` | References one sub-table of a merged subdirectory table: the value is a member file name (a `FileMap` key), generating `TableName.FileMap["file"]` (see case 08-story) |
+| `RefTable[table][]` | `TableName.Record[][]` | Sub-table reference array, comma-separated member file names |
 
 ### Type Notes
 
@@ -228,12 +230,14 @@ export namespace DataCsv {
 
 ### Ref — reference another CSV's Record
 
-Use `Ref[fileName]` to reference a data record from another CSV file.
+Use `Ref[tableName]` to reference a data record from another CSV file.
+
+> **Table naming**: write the extension-less table name by default — `Ref[skill]` references `skill.csv` (namespace `SkillCsv`). Spelling out the full file name (`Ref[skill.csv]`) stays compatible; exact matches win. When several tables share the same stem (e.g. `skill.csv` and `skill.ini` side by side) the stem is ambiguous and the full name is required, otherwise a warning is printed. `RefEnum` / `Template` / `RefTable` follow the same rule.
 
 **Syntax:**
 ```csv
 refField
-Ref[other.csv]
+Ref[other]
 ```
 
 **Generated code:**
@@ -251,12 +255,12 @@ export const List: Record[] = [
 
 ### Ref[] — reference an array of Records from another CSV
 
-Use `Ref[fileName][]` to reference multiple rows of another CSV at once (comma-separated target row Indexes), suited for "a group of identity-bearing sub-objects" (e.g. reward groups, wave configs); inline private structured lists should use `Object[]`.
+Use `Ref[tableName][]` to reference multiple rows of another CSV at once (comma-separated target row Indexes), suited for "a group of identity-bearing sub-objects" (e.g. reward groups, wave configs); inline private structured lists should use `Object[]`.
 
 **Syntax:**
 ```csv
 refArr
-Ref[other.csv][]
+Ref[other][]
 ```
 The cell holds comma-separated Indexes (same array convention as `String[]`; empty cell is `[]`, empty slots kept by the array n+1 rule):
 ```csv
@@ -280,12 +284,12 @@ export const List: Record[] = [
 
 ### RefEnum — reference another CSV's enum type
 
-Use `RefEnum[fileName.fieldName]` to reference an enum type of another CSV.
+Use `RefEnum[tableName.fieldName]` to reference an enum type of another CSV.
 
 **Syntax:**
 ```csv
 myType
-RefEnum[data.csv.mytype]
+RefEnum[data.mytype]
 ```
 
 **Generated code:**
@@ -297,12 +301,12 @@ export interface Record {
 
 ### RefEnum[] — reference another CSV's enum array type
 
-Use `RefEnum[fileName.fieldName][]` to reference an enum array type of another CSV.
+Use `RefEnum[tableName.fieldName][]` to reference an enum array type of another CSV.
 
 **Syntax:**
 ```csv
 typeArr
-RefEnum[data.csv.typearray][]
+RefEnum[data.typearray][]
 ```
 
 **Generated code:**
@@ -314,7 +318,7 @@ export interface Record {
 
 ### Template — template inheritance (reference a row and override fields)
 
-Use `Template[fileName]` to take one row of another CSV as a "prototype" and override some of its fields, suited for "base config + a few variants" (e.g. elite monsters, enhanced items), avoiding copying whole rows.
+Use `Template[tableName]` to take one row of another CSV as a "prototype" and override some of its fields, suited for "base config + a few variants" (e.g. elite monsters, enhanced items), avoiding copying whole rows.
 
 **Syntax:** the cell is `<baseRowIndex>|<key>:<value>,<key>:<value>` — before `|` is the base row id (same meaning as a `Ref` value), after `|` are the overrides, comma-separated `key:value`. Omit `|` and everything after it when there are no overrides; then it is exactly equivalent to `Ref`.
 
@@ -328,7 +332,7 @@ Override values support three shapes (bracket syntax mirrors the generated TypeS
 
 ```csv
 base
-Template[skill.csv]
+Template[skill]
 101|damage:150,range:8
 102|params:{heal:500,target:ally}
 103|Params:[6,2.07]
@@ -365,10 +369,10 @@ export const List: Record[] = [
 
 ### Template[] — template array
 
-Use `Template[fileName][]` to write multiple template entries in one cell, separated by **semicolon `;`** (same element separator as `Object[]`); the rules inside each entry are identical to a single `Template`:
+Use `Template[tableName][]` to write multiple template entries in one cell, separated by **semicolon `;`** (same element separator as `Object[]`); the rules inside each entry are identical to a single `Template`:
 ```csv
 rewards
-Template[item.csv][]
+Template[item][]
 "1001|damage:200;1002|count:5;1003"
 ```
 
@@ -387,11 +391,37 @@ export const List: Record[] = [
 
 > An empty cell generates `[]`; n semicolons keep n+1 slots (same as other arrays); a slot with an empty base id (e.g. the middle empty segment in `1001|x:1;;1003`) prints a warning.
 
+### RefTable — reference a sub-table of a merged subdirectory table
+
+Use `RefTable[tableName]` to reference one sub-table of a merged subdirectory table: the cell holds a member file name (a `FileMap` key in the generated code), generating `TableName.FileMap["file"]` typed `TableName.Record[]`. Suited for "chapter directory + chapter index" layouts (see case 08-story):
+
+```csv
+id,chapter,title,story
+Index,Number,String,RefTable[story]
+ch01,1,The Reopened Sign,ch01
+```
+
+In the generated code the `story` field is the full row list of that chapter file:
+
+```typescript
+export interface Record {
+    story: StoryCsv.Record[];
+};
+
+export const List: Record[] = [
+    {
+        story: StoryCsv.FileMap["ch01"],
+    },
+];
+```
+
+> The merged table needs no `Index` column — the member file name is the sub-table key; the merged `List` still holds every row, grouped per file in `FileMap`. RefTable targets take part in topological sorting, so the referenced merged table is always emitted first.
+
 ### Reference Example
 
 ```csv
 name,dataRecord,myType,typeArr
-String,Ref[data.csv],RefEnum[data.csv.mytype],RefEnum[data.csv.typearray][]
+String,Ref[data],RefEnum[data.mytype],RefEnum[data.typearray][]
 "test",1,"type1","t1, t2"
 ```
 
@@ -467,11 +497,11 @@ export type params = {
 };
 ```
 
-**2. Level-value table** [skilllevel.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/skilllevel.csv) — each row is "skill × one value group", linked back to the skill with `Ref[skill.csv]`:
+**2. Level-value table** [skilllevel.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/skilllevel.csv) — each row is "skill × one value group", linked back to the skill with `Ref[skill]`:
 
 ```csv
 id,skill,level,damage,heal,manaCost
-Index,Ref[skill.csv],Number,Number,Number,Number
+Index,Ref[skill],Number,Number,Number,Number
 1,101,1,100,0,20
 2,101,2,150,0,30
 3,102,1,0,200,40
@@ -484,13 +514,13 @@ const lv2 = SkilllevelCsv.List.filter(lv => lv.skill === SkillCsv.Map["101"])
                               .find(lv => lv.level === 2);  // damage 150
 ```
 
-> If the values differ by "the level the character learned" rather than being intrinsic skill growth, build another character–skill link table (`Ref[unit.csv]` + `Ref[skill.csv]` + `level`); do not store levels directly in the character table.
+> If the values differ by "the level the character learned" rather than being intrinsic skill growth, build another character–skill link table (`Ref[unit]` + `Ref[skill]` + `level`); do not store levels directly in the character table.
 
-**3. Character table** [unit.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/unit.csv) — references multiple skills with `Ref[skill.csv][]`:
+**3. Character table** [unit.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/unit.csv) — references multiple skills with `Ref[skill][]`:
 
 ```csv
 id,name,skills
-Index,String,Ref[skill.csv][]
+Index,String,Ref[skill][]
 1,hero1,"101,102"
 ```
 
@@ -555,7 +585,7 @@ m2,orc,300,25
 ```csv
 # monsterelite.csv — variant table (output order auto-arranged by reference)
 id,name,base
-Index,String,Template[monster.csv]
+Index,String,Template[monster]
 e1,goblin-elite,"m1|hp:250,damage:20"
 b1,orc-boss,"m2|hp:2000,damage:80"
 ```

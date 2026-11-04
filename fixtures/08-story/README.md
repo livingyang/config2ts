@@ -23,10 +23,10 @@ export const FileMap: { [file: string]: Record[] } = {
 };
 ```
 
-Other tables reference a whole sub-table with `RefTable[story.csv]`: the cell
+Other tables reference a whole sub-table with `RefTable[story]`: the cell
 holds a file name (`ch01`), the generated field is typed `StoryCsv.Record[]`
 and resolves to `StoryCsv.FileMap["ch01"]`. The array form
-`RefTable[story.csv][]` holds several file names and resolves to
+`RefTable[story][]` holds several file names and resolves to
 `StoryCsv.Record[][]`. `story-list.csv` is the chapter index built this way —
 each row mirrors one chapter json (`id`/`chapter`/`title`/`triggerArea`), with
 the original `nodes` field renamed to `story` and turned into the sub-table

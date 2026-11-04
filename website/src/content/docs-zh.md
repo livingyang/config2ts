@@ -179,12 +179,14 @@ fruit = 2
 | `Enum[]` | 联合类型数组 | 枚举数组 |
 | `Object` | 对象类型 | 解析 `key:value,key:value` 格式，自动推断值类型 |
 | `Object[]` | 对象数组 | 分号分隔对象，对象内逗号分隔 `key:value`；n 个分号 → n+1 个对象，空对象槽位为 `{}` |
-| `Ref[file]` | `表名.Record` | 引用其他表整行，值为目标行 Index，生成 `表名.Map["id"]` |
-| `Ref[file][]` | `表名.Record[]` | 引用数组，逗号分隔多个 Index，生成 `[表名.Map["id"],...]` |
-| `RefEnum[file.field]` | `表名.字段名` | 引用其他表的枚举字段 |
-| `RefEnum[file.field][]` | `表名.字段名[]` | 引用其他表的枚举数组 |
-| `Template[file]` | `表名.Record` | 模板继承：以目标表一行为原型并覆盖部分字段，单元格 `id\|key:value,...`，数组/对象值用 `[..]`/`{..}` 包裹，无覆盖项时等同 `Ref[file]` |
-| `Template[file][]` | `表名.Record[]` | 模板数组，分号 `;` 分隔多个模板条目（同 `Object[]`） |
+| `Ref[table]` | `表名.Record` | 引用其他表整行，值为目标行 Index，生成 `表名.Map["id"]` |
+| `Ref[table][]` | `表名.Record[]` | 引用数组，逗号分隔多个 Index，生成 `[表名.Map["id"],...]` |
+| `RefEnum[table.field]` | `表名.字段名` | 引用其他表的枚举字段 |
+| `RefEnum[table.field][]` | `表名.字段名[]` | 引用其他表的枚举数组 |
+| `Template[table]` | `表名.Record` | 模板继承：以目标表一行为原型并覆盖部分字段，单元格 `id\|key:value,...`，数组/对象值用 `[..]`/`{..}` 包裹，无覆盖项时等同 `Ref[table]` |
+| `Template[table][]` | `表名.Record[]` | 模板数组，分号 `;` 分隔多个模板条目（同 `Object[]`） |
+| `RefTable[table]` | `表名.Record[]` | 引用同构子目录合并表的子表：值为成员文件名（`FileMap` 的 key），生成 `表名.FileMap["文件名"]`（见用例 08-story） |
+| `RefTable[table][]` | `表名.Record[][]` | 子表引用数组，逗号分隔多个成员文件名 |
 
 ### 类型说明
 
@@ -227,12 +229,14 @@ export namespace DataCsv {
 
 ### Ref - 引用其他 CSV 的 Record
 
-使用 `Ref[文件名]` 类型可以引用其他 CSV 文件的数据记录。
+使用 `Ref[表名]` 类型可以引用其他 CSV 文件的数据记录。
+
+> **表名写法**：默认写去扩展名的表名，`Ref[skill]` 即引用 `skill.csv`（生成命名空间 `SkillCsv`）。写完整文件名（`Ref[skill.csv]`）同样兼容，精确匹配优先；当去扩展名后同名的表多于一个（如 `skill.csv` 与 `skill.ini` 并存）时存在歧义，必须写全名，否则输出告警。`RefEnum` / `Template` / `RefTable` 遵循同一规则。
 
 **语法：**
 ```csv
 refField
-Ref[other.csv]
+Ref[other]
 ```
 
 **生成的代码：**
@@ -250,12 +254,12 @@ export const List: Record[] = [
 
 ### Ref[] - 引用其他 CSV 的 Record 数组
 
-使用 `Ref[文件名][]` 类型可以一次引用其他 CSV 的多行记录（逗号分隔多个目标行 Index），适合"一组有身份的子对象"场景（如奖励组、波次配置）；内联私有的结构化列表应使用 `Object[]`。
+使用 `Ref[表名][]` 类型可以一次引用其他 CSV 的多行记录（逗号分隔多个目标行 Index），适合"一组有身份的子对象"场景（如奖励组、波次配置）；内联私有的结构化列表应使用 `Object[]`。
 
 **语法：**
 ```csv
 refArr
-Ref[other.csv][]
+Ref[other][]
 ```
 单元格写逗号分隔的多个 Index（数组写法与 `String[]` 一致，空单元格为 `[]`，空槽位按数组 n+1 规则保留）：
 ```csv
@@ -279,12 +283,12 @@ export const List: Record[] = [
 
 ### RefEnum - 引用其他 CSV 的枚举类型
 
-使用 `RefEnum[文件名.字段名]` 可以引用其他 CSV 的枚举类型。
+使用 `RefEnum[表名.字段名]` 可以引用其他 CSV 的枚举类型。
 
 **语法：**
 ```csv
 myType
-RefEnum[data.csv.mytype]
+RefEnum[data.mytype]
 ```
 
 **生成的代码：**
@@ -296,12 +300,12 @@ export interface Record {
 
 ### RefEnum[] - 引用其他 CSV 的枚举数组类型
 
-使用 `RefEnum[文件名.字段名][]` 可以引用其他 CSV 的枚举数组类型。
+使用 `RefEnum[表名.字段名][]` 可以引用其他 CSV 的枚举数组类型。
 
 **语法：**
 ```csv
 typeArr
-RefEnum[data.csv.typearray][]
+RefEnum[data.typearray][]
 ```
 
 **生成的代码：**
@@ -313,7 +317,7 @@ export interface Record {
 
 ### Template - 模板继承（引用整行并覆盖字段）
 
-使用 `Template[文件名]` 可以引用其他 CSV 的一行作为"原型"，再覆盖其中部分字段，适合"基础配置 + 少量变体"场景（如精英怪物、强化道具），避免整行复制。
+使用 `Template[表名]` 可以引用其他 CSV 的一行作为"原型"，再覆盖其中部分字段，适合"基础配置 + 少量变体"场景（如精英怪物、强化道具），避免整行复制。
 
 **语法：** 单元格为 `<基行Index>|<key>:<value>,<key>:<value>`——`|` 前是基行 id（与 `Ref` 的值含义相同），`|` 后是覆盖项，逗号分隔多个 `key:value`。没有覆盖项时省略 `|` 及之后内容即可，此时与 `Ref` 完全等价。
 
@@ -327,7 +331,7 @@ export interface Record {
 
 ```csv
 base
-Template[skill.csv]
+Template[skill]
 101|damage:150,range:8
 102|params:{heal:500,target:ally}
 103|Params:[6,2.07]
@@ -364,10 +368,10 @@ export const List: Record[] = [
 
 ### Template[] - 模板数组
 
-使用 `Template[文件名][]` 可以在一个单元格内写多个模板条目，条目之间用**分号 `;` 分隔**（与 `Object[]` 的元素分隔符一致），每个条目内部规则与单个 `Template` 相同：
+使用 `Template[表名][]` 可以在一个单元格内写多个模板条目，条目之间用**分号 `;` 分隔**（与 `Object[]` 的元素分隔符一致），每个条目内部规则与单个 `Template` 相同：
 ```csv
 rewards
-Template[item.csv][]
+Template[item][]
 "1001|damage:200;1002|count:5;1003"
 ```
 
@@ -386,11 +390,37 @@ export const List: Record[] = [
 
 > 空单元格生成 `[]`；n 个分号保持 n+1 个槽位（与其他数组一致），基行 id 为空的槽位（如 `1001|x:1;;1003` 中间的空段）会输出警告。
 
+### RefTable - 引用同构子目录合并表的子表
+
+使用 `RefTable[表名]` 可以引用"同构子目录合并表"中的一张子表：单元格填写成员文件名（即生成代码中 `FileMap` 的 key），生成 `表名.FileMap["文件名"]`，字段类型为 `表名.Record[]`。适合"章节目录 + 章节索引"场景（见用例 08-story）：
+
+```csv
+id,chapter,title,story
+Index,Number,String,RefTable[story]
+ch01,1,重开的招牌,ch01
+```
+
+生成的代码中 `story` 字段即为该章节文件的全部数据行：
+
+```typescript
+export interface Record {
+    story: StoryCsv.Record[];
+};
+
+export const List: Record[] = [
+    {
+        story: StoryCsv.FileMap["ch01"],
+    },
+];
+```
+
+> 合并表无需 `Index` 列，成员文件名就是子表的 key；数组合并体的 `List` 仍包含全部行，`FileMap` 按文件名分组。引用目标参与拓扑排序，被引用的合并表总是先输出。
+
 ### 引用示例
 
 ```csv
 name,dataRecord,myType,typeArr
-String,Ref[data.csv],RefEnum[data.csv.mytype],RefEnum[data.csv.typearray][]
+String,Ref[data],RefEnum[data.mytype],RefEnum[data.typearray][]
 "测试",1,"type1","t1, t2"
 ```
 
@@ -466,11 +496,11 @@ export type params = {
 };
 ```
 
-**2. 等级数值表** [skilllevel.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/skilllevel.csv) —— 每行是"技能 × 一组数值"，用 `Ref[skill.csv]` 关联回技能：
+**2. 等级数值表** [skilllevel.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/skilllevel.csv) —— 每行是"技能 × 一组数值"，用 `Ref[skill]` 关联回技能：
 
 ```csv
 id,skill,level,damage,heal,manaCost
-Index,Ref[skill.csv],Number,Number,Number,Number
+Index,Ref[skill],Number,Number,Number,Number
 1,101,1,100,0,20
 2,101,2,150,0,30
 3,102,1,0,200,40
@@ -483,13 +513,13 @@ const lv2 = SkilllevelCsv.List.filter(lv => lv.skill === SkillCsv.Map["101"])
                               .find(lv => lv.level === 2);  // damage 150
 ```
 
-> 如果数值是"角色学到的等级不同"而非技能固有成长，再建一张角色-技能关联表（`Ref[unit.csv]` + `Ref[skill.csv]` + `level`），不要在角色表里直接存等级。
+> 如果数值是"角色学到的等级不同"而非技能固有成长，再建一张角色-技能关联表（`Ref[unit]` + `Ref[skill]` + `level`），不要在角色表里直接存等级。
 
-**3. 角色表** [unit.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/unit.csv) —— 用 `Ref[skill.csv][]` 引用多个技能：
+**3. 角色表** [unit.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/unit.csv) —— 用 `Ref[skill][]` 引用多个技能：
 
 ```csv
 id,name,skills
-Index,String,Ref[skill.csv][]
+Index,String,Ref[skill][]
 1,hero1,"101,102"
 ```
 
@@ -554,7 +584,7 @@ m2,orc,300,25
 ```csv
 # monsterelite.csv —— 变体表（输出顺序由引用关系自动排列）
 id,name,base
-Index,String,Template[monster.csv]
+Index,String,Template[monster]
 e1,goblin-elite,"m1|hp:250,damage:20"
 b1,orc-boss,"m2|hp:2000,damage:80"
 ```

@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 // Compiled together with src by tsconfig.test.json, so this resolves to
 // .test-build/src/config2ts.js at runtime (same compiler options as the lib build).
-import { GetTsStringFromFileList, GetValidFileList } from "../src/config2ts";
+import { GetTsStringFromFileList, GetValidFileList, resolveTableName } from "../src/config2ts";
 
 // Compiled to .test-build/tests/, so the repository root is two levels up.
 const rootDir = path.resolve(__dirname, "../..");
@@ -103,6 +103,23 @@ test("large table falls EnumIndex field back to string", function () {
   assert.ok(small.includes("        Key: Key;"));
   assert.ok(!small.includes("Key: string;"));
   fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// Table references are written without the extension by default
+// ("Ref[skill]" -> "skill.csv"); a full file name still wins via exact match,
+// and a stem shared by several units is ambiguous (must be spelled out).
+test("resolveTableName matches exact names first, then unique stems", function () {
+  const names = ["skill.csv", "skill-level.csv", "story.csv", "inifile.ini"];
+  assert.equal(resolveTableName("skill.csv", names), "skill.csv");
+  assert.equal(resolveTableName("skill", names), "skill.csv");
+  assert.equal(resolveTableName("story", names), "story.csv");
+  assert.equal(resolveTableName("inifile", names), "inifile.ini");
+  // "skill-level" is a stem of its own file; a partial stem must not match.
+  assert.equal(resolveTableName("skill-level", names), "skill-level.csv");
+  assert.equal(resolveTableName("missing", names), null);
+  // Ambiguous stem: two units share it, the caller keeps the written form.
+  const ambiguous = ["data.csv", "data.ini"];
+  assert.equal(resolveTableName("data", ambiguous), null);
 });
 
 // The regression this guards against is a compiler limit, so it can only be

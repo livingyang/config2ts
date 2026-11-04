@@ -14,6 +14,7 @@ export interface ConvertUnit {
     refs: string[];
     subTables?: SubTableInfo[];
 }
+export declare function resolveTableName(ref: string, names: Iterable<string>): string | null;
 export declare function collectConvertUnits(dir: string): ConvertUnit[];
 export declare function GetTsStringFromUnits(units: ConvertUnit[]): string;
 export declare function GetTsStringFromFileList(fileList: string[]): string;
