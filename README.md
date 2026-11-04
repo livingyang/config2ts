@@ -26,6 +26,21 @@ tables, so you can compare both layouts directly:
 - single mode example: [`config/total.ts`](config/total.ts)
 - split mode example: [`config/split/`](config/split/) (one file per table + `index.ts`)
 
+## fixtures (single source of truth)
+
+The [`fixtures/`](fixtures/) folder holds one self-contained case directory per
+feature (`01-basic-types`, `03-cross-ref`, ...). Each case contains its source
+tables plus a committed golden file `expected.ts` generated from them. The same
+`(input.csv, expected.ts)` pairs are used by the golden-file unit tests
+([`tests/fixtures.test.ts`](tests/fixtures.test.ts)) and by the demo site, so
+documentation, tests and demos can never drift from actual tool behavior.
+
+- Regenerate golden files: `npm run fixtures:regen` (rebuilds lib, then rewrites
+  every `expected.ts`) — review the diff manually before committing; never
+  blindly rewrite a failing golden file.
+- Tests: every case is regenerated in-memory and compared byte-for-byte against
+  its golden file, and all golden files are additionally checked with `tsc`.
+
 ## single mode
 
 Merge all config tables into a single TypeScript file.

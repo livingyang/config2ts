@@ -1,0 +1,5 @@
+id,name,kind,params
+Index,String,Enum,Object
+101,fireball,attack,"damage:100,range:5,element:fire"
+102,heal,support,"heal:200,target:ally"
+103,lightning,attack,"damage:80,range:3,element:thunder,chain:3"

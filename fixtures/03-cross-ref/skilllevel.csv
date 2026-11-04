@@ -1,0 +1,6 @@
+id,skill,level,damage,heal,manaCost
+Index,Ref[skill.csv],Number,Number,Number,Number
+1,101,1,100,0,20
+2,101,2,150,0,30
+3,102,1,0,200,40
+4,103,1,80,0,25
