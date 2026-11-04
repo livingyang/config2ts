@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onUnmounted, ref } from "vue";
 import { fixtures, findCase } from "./fixtures";
 import CodeBlock from "./components/CodeBlock.vue";
 import CsvTable from "./components/CsvTable.vue";
@@ -18,10 +18,11 @@ function parseHash(): Route {
 
 const route = ref<Route>(parseHash());
 
-watch(
-  () => window.location.hash,
-  () => (route.value = parseHash()),
-);
+// window.location.hash is NOT reactive data — a watch() getter on it never
+// fires. Listen to the hashchange event instead.
+const onHashChange = () => (route.value = parseHash());
+window.addEventListener("hashchange", onHashChange);
+onUnmounted(() => window.removeEventListener("hashchange", onHashChange));
 
 function go(path: string): void {
   window.location.hash = path;
