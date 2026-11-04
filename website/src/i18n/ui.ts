@@ -168,9 +168,9 @@ export namespace UiCsv {
         },
         {
             key: 'case.05-multiline-strings.desc',
-            zh: '引号内换行的多行文本与点分 id 的语言表布局。',
-            en: 'Multiline strings inside quoted cells plus dotted ids',
-            ja: 'in a language-pair table layout.',
+            zh: '聚焦多行文本转换：引号内换行的描述、缩进对白、列表、单元格内空行与结尾换行，以及点分 id。',
+            en: 'Focused on multiline conversion: quoted line breaks in descriptions',
+            ja: 'indented dialogue',
         },
         {
             key: 'case.06-ini-toml.title',

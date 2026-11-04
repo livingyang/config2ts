@@ -26,7 +26,7 @@ case.03-cross-ref.desc,跨表引用：Ref 取整行、Ref 数组按 id 批量引
 case.04-refs-and-templates.title,04 · 引用与模板,04 · Refs & templates,04 · 参照とテンプレート
 case.04-refs-and-templates.desc,无主键表的 RefEnum、Ref 数组与 Template 模板继承（基础行 + 字段覆盖）。,Tables without a key: RefEnum, Ref arrays and Template inheritance (base row + field overrides).,主キーなしテーブルの RefEnum、Ref 配列、Template 継承（基底行＋フィールド上書き）。
 case.05-multiline-strings.title,05 · 多行文本,05 · Multiline strings,05 · 複数行テキスト
-case.05-multiline-strings.desc,引号内换行的多行文本与点分 id 的语言表布局。,Multiline strings inside quoted cells plus dotted ids, in a language-pair table layout.,引用符内改行の複数行文字列とドット区切り id の言語テーブル。
+case.05-multiline-strings.desc,聚焦多行文本转换：引号内换行的描述、缩进对白、列表、单元格内空行与结尾换行，以及点分 id。,Focused on multiline conversion: quoted line breaks in descriptions, indented dialogue, lists, blank and trailing lines inside a cell, plus dotted ids.,複数行テキストの変換に特化：引用符内の改行、インデント付き対話、リスト、セル内の空行と末尾の改行、ドット区切り id。
 case.06-ini-toml.title,06 · INI 与 TOML,06 · INI & TOML,06 · INI と TOML
 case.06-ini-toml.desc,非 CSV 格式：ini 与 toml 同样生成命名空间，含分区（section）。,Non-CSV formats: ini and toml produce the same namespaces, including sections.,CSV 以外の形式：ini と toml も同じ名前空間を生成（セクション含む）。
 case.07-i18n.title,07 · 多语言文案（按语言拆表）,07 · Localized text (file per language),07 · 多言語テキスト（言語ごと）

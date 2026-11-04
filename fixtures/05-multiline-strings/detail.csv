@@ -1,0 +1,29 @@
+﻿id,text
+Index,String
+item.potion.name,Potion
+item.potion.desc,"Restores 50 HP.
+Use from the inventory menu."
+item.scroll.name,Teleport Scroll
+item.scroll.desc,"Warps the party to the last visited town.
+Consumed on use.
+Cannot be used in dungeons."
+quest.intro.dialog,"Elder:
+  The forest has been whispering lately.
+  Bring back ten wolf fangs and I will reward you."
+quest.complete.dialog,"Elder:
+  You made it back in one piece!
+  Take this — it belonged to my son.
+  May the road stay kind to you."
+changelog.1.2.0,"v1.2.0
+- Added the Endless Tower.
+- Rebalanced frost mages.
+- Fixed a crash when saving mid-craft."
+tips.loading.3,"TIP: Hold Shift to sprint.
+
+Stamina drains faster while sprinting."
+review.drakewing,"Pros:
+  Gorgeous hand-drawn bosses.
+  Music carries every fight.
+Cons:
+  Save points are far apart.
+"
