@@ -29,5 +29,5 @@ case.05-multiline-strings.title,05 · 多行文本,05 · Multiline strings,05 ·
 case.05-multiline-strings.desc,聚焦多行文本转换：引号内换行的描述、缩进对白、列表、单元格内空行与结尾换行，以及点分 id。,Focused on multiline conversion: quoted line breaks in descriptions, indented dialogue, lists, blank and trailing lines inside a cell, plus dotted ids.,複数行テキストの変換に特化：引用符内の改行、インデント付き対話、リスト、セル内の空行と末尾の改行、ドット区切り id。
 case.06-ini-toml.title,06 · INI 与 TOML,06 · INI & TOML,06 · INI と TOML
 case.06-ini-toml.desc,非 CSV 格式：ini 与 toml 同样生成命名空间，含分区（section）。,Non-CSV formats: ini and toml produce the same namespaces, including sections.,CSV 以外の形式：ini と toml も同じ名前空間を生成（セクション含む）。
-case.07-i18n-columns.title,07 · 多语言文案,07 · Localized text,07 · 多言語テキスト
-case.07-i18n-columns.desc,单表多列：key + zh / en / ja 同在一行，运行时按语言取列，缺译一眼可见；占位符 {name} 原样保留。,One table, one column per language: every translation of a key sits on one row, the runtime picks a column, missing translations are obvious; {name} placeholders stay intact.,1 つの表に言語ごとの列：同じ key の翻訳が 1 行に並び、実行時に列を選ぶだけ。未翻訳も一目で分かり、{name} プレースホルダーはそのまま残る。
+case.07-i18n.title,07 · 多语言文案,07 · Localized text,07 · 多言語テキスト
+case.07-i18n.desc,单表多列：key + zh / en / ja 同在一行，运行时按语言取列，缺译一眼可见；占位符 {name} 原样保留。,One table, one column per language: every translation of a key sits on one row, the runtime picks a column, missing translations are obvious; {name} placeholders stay intact.,1 つの表に言語ごとの列：同じ key の翻訳が 1 行に並び、実行時に列を選ぶだけ。未翻訳も一目で分かり、{name} プレースホルダーはそのまま残る。

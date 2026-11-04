@@ -185,13 +185,13 @@ export namespace UiCsv {
             ja: 'including sections.',
         },
         {
-            key: 'case.07-i18n-columns.title',
+            key: 'case.07-i18n.title',
             zh: '07 · 多语言文案',
             en: '07 · Localized text',
             ja: '07 · 多言語テキスト',
         },
         {
-            key: 'case.07-i18n-columns.desc',
+            key: 'case.07-i18n.desc',
             zh: '单表多列：key + zh / en / ja 同在一行，运行时按语言取列，缺译一眼可见；占位符 {name} 原样保留。',
             en: 'One table',
             ja: 'one column per language: every translation of a key sits on one row',

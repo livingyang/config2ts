@@ -1,4 +1,4 @@
-# 07-i18n-columns
+# 07-i18n
 
 The default localization layout: a single table with one column per language
 (`zh` / `en` / `ja`) sharing one key column. One namespace holds every
