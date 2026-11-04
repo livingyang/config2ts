@@ -49,6 +49,30 @@ for (const caseName of caseDirs) {
 
 console.log(`\n${caseDirs.length} cases, ${updated} changed. Review the diff before committing.`);
 
+// A composite golden: merge tables from several cases in ONE call, mixing CSV
+// (with cross-table refs) and non-CSV formats. Per-case goldens can't cover
+// that — they only ever see one directory — so the "everything merged into a
+// single file" path keeps its own golden under tests/golden/.
+const MERGED = {
+  outFile: path.join(rootDir, "tests", "golden", "merged-formats.expected.ts"),
+  cases: ["03-cross-ref", "06-ini-toml"],
+};
+const mergedSources = MERGED.cases.flatMap(function (caseName) {
+  const caseDir = path.join(fixturesDir, caseName);
+  return GetValidFileList(fs.readdirSync(caseDir))
+    .sort()
+    .map((f) => path.join(caseDir, f));
+});
+const mergedGenerated = HEADER + GetTsStringFromFileList(mergedSources);
+const mergedPrev = fs.existsSync(MERGED.outFile) ? fs.readFileSync(MERGED.outFile, "utf-8") : null;
+fs.mkdirSync(path.dirname(MERGED.outFile), { recursive: true });
+fs.writeFileSync(MERGED.outFile, mergedGenerated);
+console.log(
+  mergedPrev === mergedGenerated
+    ? "=  tests/golden/merged-formats.expected.ts (unchanged)"
+    : "~  tests/golden/merged-formats.expected.ts (updated)",
+);
+
 // The demo site dogfoods this tool: its own trilingual UI strings table
 // (website/src/i18n/ui.csv) is compiled to ui.ts by config2ts as well.
 const i18nDir = path.join(rootDir, "website", "src", "i18n");

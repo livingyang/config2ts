@@ -46,6 +46,13 @@ test("all fixture golden files compile", { timeout: 120000 }, function () {
   const goldenFiles = fixtureCases()
     .map((c) => path.join(fixturesDir, c, "expected.ts"))
     .filter((p) => fs.existsSync(p));
+  // Composite goldens (merged across cases) are demo artifacts too.
+  const compositeDir = path.join(rootDir, "tests", "golden");
+  if (fs.existsSync(compositeDir)) {
+    for (const f of fs.readdirSync(compositeDir)) {
+      if (f.endsWith(".expected.ts")) goldenFiles.push(path.join(compositeDir, f));
+    }
+  }
   assert.ok(goldenFiles.length > 0, "no fixture golden files found");
 
   const tscPath = path.join(rootDir, "node_modules/typescript/bin/tsc");

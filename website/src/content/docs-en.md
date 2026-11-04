@@ -79,11 +79,7 @@ config2ts -d ./config -o ./src/types -n config.ts
 
 ## Output Modes (single / split)
 
-Choose the output mode with `-m, --mode`. The same set of source tables under this repo's
-[`config/`](https://github.com/livingyang/config2ts/tree/master/config) directory ships examples for both modes, so you can compare them directly:
-
-- single mode example: [`config/total.ts`](https://github.com/livingyang/config2ts/blob/master/config/total.ts)
-- split mode example: [`config/split/`](https://github.com/livingyang/config2ts/tree/master/config/split)
+Choose the output mode with `-m, --mode`. Every case directory under [`fixtures/`](https://github.com/livingyang/config2ts/tree/master/fixtures) holds its source tables plus the **single-mode merge** of those tables as [`expected.ts`](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/expected.ts), so input and output sit side by side; the Demo site renders the same pairs.
 
 **single mode (default)**: merges all config tables into one file (`-n` sets the file name, default `csv.ts`).
 
@@ -422,9 +418,7 @@ Reference-relationship problems are also warned during the merge scan:
 
 ## Common Modeling Scenarios
 
-The source files for every scenario below can be found in this repo's
-[`config/`](https://github.com/livingyang/config2ts/tree/master/config) directory; the single-mode result is merged into
-[`total.ts`](https://github.com/livingyang/config2ts/blob/master/config/total.ts) (a test fixture that always tracks the latest syntax), and the split-mode result is under [`config/split/`](https://github.com/livingyang/config2ts/tree/master/config/split).
+The source files for every scenario below live under [`fixtures/`](https://github.com/livingyang/config2ts/tree/master/fixtures) (scenario 1 → `03-cross-ref`, scenario 2 → `07-i18n`, scenario 3 → `04-refs-and-templates`); each case's `expected.ts` is the single-mode merge of that case's tables, produced by `npm run fixtures:regen`.
 
 ### Choosing: Object[] or Ref[]?
 
@@ -436,7 +430,7 @@ The source files for every scenario below can be found in this repo's
 
 Requirement: each character has several skills; skills differ in their parameter fields; the same skill has multiple value groups (levels). Split into three tables:
 
-**1. Skill table** [skill.csv](https://github.com/livingyang/config2ts/blob/master/config/skill.csv) — heterogeneous parameters folded into an `Object` field, keys merged across all skills, missing fields become optional:
+**1. Skill table** [skill.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/skill.csv) — heterogeneous parameters folded into an `Object` field, keys merged across all skills, missing fields become optional:
 
 ```csv
 id,name,kind,params
@@ -454,7 +448,7 @@ export type params = {
 };
 ```
 
-**2. Level-value table** [skilllevel.csv](https://github.com/livingyang/config2ts/blob/master/config/skilllevel.csv) — each row is "skill × one value group", linked back to the skill with `Ref[skill.csv]`:
+**2. Level-value table** [skilllevel.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/skilllevel.csv) — each row is "skill × one value group", linked back to the skill with `Ref[skill.csv]`:
 
 ```csv
 id,skill,level,damage,heal,manaCost
@@ -473,7 +467,7 @@ const lv2 = SkilllevelCsv.List.filter(lv => lv.skill === SkillCsv.Map["101"])
 
 > If the values differ by "the level the character learned" rather than being intrinsic skill growth, build another character–skill link table (`Ref[unit.csv]` + `Ref[skill.csv]` + `level`); do not store levels directly in the character table.
 
-**3. Character table** [unit.csv](https://github.com/livingyang/config2ts/blob/master/config/unit.csv) — references multiple skills with `Ref[skill.csv][]`:
+**3. Character table** [unit.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/unit.csv) — references multiple skills with `Ref[skill.csv][]`:
 
 ```csv
 id,name,skills
@@ -489,29 +483,30 @@ Generates `skills: SkillCsv.Record[]`, data is `[SkillCsv.Map["101"], SkillCsv.M
 
 Principle: **store only translation keys and templates in config tables, never hard-coded text; all values go through named placeholders filled at runtime.**
 
-Default: **one table, one column per language** ([lang.csv](https://github.com/livingyang/config2ts/blob/master/config/lang.csv)) — one row per key, key convention `{type}.{id}.{field}`:
+Default: **one table, one column per language** ([text.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/07-i18n/text.csv)) — one row per key, key convention `{type}.{id}.{field}` (a key without an id drops the middle segment, e.g. `ui.title`):
 
 ```csv
-id,zh,en
-Index,String,String
-skill.101.name,火球术,Fireball
-skill.101.desc,"对 {range} 米内的敌人造成 {damage} 点火焰伤害。","Deals {damage} fire damage to an enemy within {range}m."
+key,zh,en,ja
+Index,String,String,String
+ui.title,海畔餐厅,Seaside Diner,海辺の食堂
+line.orders,今天已有 {count} 位客人点单。,{count} guests ordered today.,本日は {count} 名の注文がありました。
 ```
 
-That generates a single namespace `LangCsv` where every row carries all languages as typed fields (`LangCsv.Map[key].zh` / `.en`). At runtime a single helper picks the column for the active locale and fills placeholders (placeholder names match the skill params / level table field names):
+That generates a single namespace `TextCsv` where every row carries all languages as typed fields (`TextCsv.Map[key].zh` / `.en` / `.ja`). At runtime a single helper picks the column for the active locale and fills placeholders:
 
 ```typescript
-let locale: "zh" | "en" = "en";
+let locale: "zh" | "en" | "ja" = "en";
 
 export function t(key: string, params?: Record<string, string | number>): string {
-  let tpl = LangCsv.Map[key]?.[locale] || LangCsv.Map[key]?.en || key;  // fall back to key on missing translation
+  let tpl = TextCsv.Map[key]?.[locale] || TextCsv.Map[key]?.zh || key;  // fall back to key on missing translation
   if (params) {
     tpl = tpl.replace(/\{(\w+)\}/g, (_, k) => k in params ? String(params[k]) : "");
   }
   return tpl;
 }
 
-t(`skill.${skill.id}.desc`, lv);  // lv from the skilllevel table → "Deals 150 fire damage to enemies within 5 meters."
+t("line.orders", { count: 3 });  // → "{count} guests ordered today." filled in
+t("ui.title");                   // → "Seaside Diner"
 ```
 
 Why single-table by default: adding a key touches one row, a missing translation shows up as an empty cell on that same row, and translations are reviewed in the same diff as the feature; with a fixed, small language set it is the least ceremony.

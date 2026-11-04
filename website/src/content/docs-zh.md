@@ -78,10 +78,7 @@ config2ts -d ./config -o ./src/types -n config.ts
 
 ### 输出模式（single / split）
 
-通过 `-m, --mode` 选择输出模式。本仓库 `config/` 目录下的同一套源表同时提供了两种模式的示例，可直接对比：
-
-- single 模式示例：[`config/total.ts`](https://github.com/livingyang/config2ts/blob/master/config/total.ts)
-- split 模式示例：[`config/split/`](https://github.com/livingyang/config2ts/tree/master/config/split)
+通过 `-m, --mode` 选择输出模式。仓库 [`fixtures/`](https://github.com/livingyang/config2ts/tree/master/fixtures) 每个用例目录里都放着源表，以及该组源表在 **single 模式下合并**的产物 [`expected.ts`](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/expected.ts)，可直接对照；本站「功能用例」页也把每组源表与产物并排渲染。
 
 **single 模式（默认）**：把所有配置表合并输出到一个文件（`-n` 指定文件名，默认 `csv.ts`）。
 
@@ -420,7 +417,7 @@ export namespace NoIdCsv {
 
 ## 常见建模场景
 
-本节场景均可在仓库 [config/](https://github.com/livingyang/config2ts/tree/master/config) 目录找到对应源文件；single 模式生成结果合并于 `total.ts`（测试夹具，始终与最新语法一致），split 模式见 `config/split/`。
+本节场景的源文件都在仓库 [`fixtures/`](https://github.com/livingyang/config2ts/tree/master/fixtures) 里（场景一 → `03-cross-ref`，场景二 → `07-i18n`，场景三 → `04-refs-and-templates`）；每个用例目录的 `expected.ts` 就是这组源表的 single 模式合并结果，由 `npm run fixtures:regen` 生成。
 
 ### 选型原则：Object[] 还是 Ref[]？
 
@@ -432,7 +429,7 @@ export namespace NoIdCsv {
 
 需求：每个角色有多个技能；技能之间参数字段不同；同一技能有多组数值（等级）。拆三张表：
 
-**1. 技能表** [skill.csv](https://github.com/livingyang/config2ts/blob/master/config/skill.csv) —— 异构参数收进 `Object` 字段，跨所有技能合并 key，缺失字段自动可选：
+**1. 技能表** [skill.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/skill.csv) —— 异构参数收进 `Object` 字段，跨所有技能合并 key，缺失字段自动可选：
 
 ```csv
 id,name,kind,params
@@ -450,7 +447,7 @@ export type params = {
 };
 ```
 
-**2. 等级数值表** [skilllevel.csv](https://github.com/livingyang/config2ts/blob/master/config/skilllevel.csv) —— 每行是"技能 × 一组数值"，用 `Ref[skill.csv]` 关联回技能：
+**2. 等级数值表** [skilllevel.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/skilllevel.csv) —— 每行是"技能 × 一组数值"，用 `Ref[skill.csv]` 关联回技能：
 
 ```csv
 id,skill,level,damage,heal,manaCost
@@ -469,7 +466,7 @@ const lv2 = SkilllevelCsv.List.filter(lv => lv.skill === SkillCsv.Map["101"])
 
 > 如果数值是"角色学到的等级不同"而非技能固有成长，再建一张角色-技能关联表（`Ref[unit.csv]` + `Ref[skill.csv]` + `level`），不要在角色表里直接存等级。
 
-**3. 角色表** [unit.csv](https://github.com/livingyang/config2ts/blob/master/config/unit.csv) —— 用 `Ref[skill.csv][]` 引用多个技能：
+**3. 角色表** [unit.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/03-cross-ref/unit.csv) —— 用 `Ref[skill.csv][]` 引用多个技能：
 
 ```csv
 id,name,skills
@@ -485,29 +482,30 @@ Index,String,Ref[skill.csv][]
 
 原则：**配置表里只放翻译 key 和模板，不放死文本；数值全部走具名占位符，运行时填充。**
 
-默认用**单表多列**（[lang.csv](https://github.com/livingyang/config2ts/blob/master/config/lang.csv)）：一行一个 key，每种语言占一列，key 约定 `{类型}.{id}.{字段}`：
+默认用**单表多列**（[text.csv](https://github.com/livingyang/config2ts/blob/master/fixtures/07-i18n/text.csv)）：一行一个 key，每种语言占一列，key 约定 `{类型}.{id}.{字段}`（无 id 的文案省略中段，如 `ui.title`）：
 
 ```csv
-id,zh,en
-Index,String,String
-skill.101.name,火球术,Fireball
-skill.101.desc,"对 {range} 米内的敌人造成 {damage} 点火焰伤害。","Deals {damage} fire damage to an enemy within {range}m."
+key,zh,en,ja
+Index,String,String,String
+ui.title,海畔餐厅,Seaside Diner,海辺の食堂
+line.orders,今天已有 {count} 位客人点单。,{count} guests ordered today.,本日は {count} 名の注文がありました。
 ```
 
-生成单个命名空间 `LangCsv`，每行同时带着所有语言的字段（`LangCsv.Map[key].zh` / `.en`）。运行时一个 helper 按当前语言取列并填充占位符（占位符名与技能 params/等级表字段名一致）：
+生成单个命名空间 `TextCsv`，每行同时带着所有语言的字段（`TextCsv.Map[key].zh` / `.en` / `.ja`）。运行时一个 helper 按当前语言取列并填充占位符：
 
 ```typescript
-let locale: "zh" | "en" = "zh";
+let locale: "zh" | "en" | "ja" = "zh";
 
 export function t(key: string, params?: Record<string, string | number>): string {
-  let tpl = LangCsv.Map[key]?.[locale] || LangCsv.Map[key]?.zh || key;  // 缺翻译回退
+  let tpl = TextCsv.Map[key]?.[locale] || TextCsv.Map[key]?.zh || key;  // 缺翻译回退
   if (params) {
     tpl = tpl.replace(/\{(\w+)\}/g, (_, k) => k in params ? String(params[k]) : "");
   }
   return tpl;
 }
 
-t(`skill.${skill.id}.desc`, lv);  // lv 来自 skilllevel 表 → "对 5 米内的敌人造成 150 点火焰伤害。"
+t("line.orders", { count: 3 });  // → "今天已有 3 位客人点单。"
+t("ui.title");                   // → "海畔餐厅"
 ```
 
 为什么默认单表：加一个 key 只动一行、漏译在同一行上空着就能看见、翻译与配置在同一个 diff 里 review；语言集合固定且数量少时最省心。

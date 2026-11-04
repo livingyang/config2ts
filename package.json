@@ -13,7 +13,6 @@
   ],
   "scripts": {
     "build": "tsc",
-    "convert": "node ./bin/config2ts -n total.ts -d ./config -o ./config",
     "fixtures:regen": "npm run build && node ./scripts/regen-fixtures.js",
     "demo:dev": "npm --prefix website run dev",
     "demo:build": "npm --prefix website run build",
