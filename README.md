@@ -64,18 +64,20 @@ so the demo can never drift from actual tool behavior.
 
 - Local dev: `npm run demo:dev`
 - Build: `npm run demo:build` — output goes to `docs/`, published on GitHub
-  Pages at `/config2ts/app/`
+  Pages at `/config2ts/` (the site owns the Pages root; `docs/` holds only the
+  build output)
 
 ## single mode
 
 Merge all config tables into a single TypeScript file.
 
 ```bash
-config2ts -d config -o dist -m single -n csv.ts -a public
+config2ts -d fixtures/03-cross-ref -o dist -m single -n csv.ts
 ```
 
 - `-n` is the merged output file name (default `csv.ts`).
-- `-a` is optional; omit it to skip `assets.ts`.
+- `-a` is optional; omit it to skip `assets.ts` (e.g. `-a public` indexes this
+  repo's sample asset tree).
 - Example output: [`fixtures/03-cross-ref/expected.ts`](fixtures/03-cross-ref/expected.ts) — all tables as `export namespace XxxCsv { ... }` in one file.
 
 ## split mode
@@ -87,7 +89,7 @@ resolved with `import` statements injected at the top of the referencing file, s
 every table is independently usable and tree-shakable.
 
 ```bash
-config2ts -d config -o dist -m split -a public
+config2ts -d fixtures/03-cross-ref -o dist -m split -a public
 ```
 
 - `-n` is reused as the index file name; the single-mode default `csv.ts` is
@@ -129,6 +131,8 @@ Notes:
 |    Ref     | namespace.Record  |
 | RefEnum    | namespace.type    |
 | RefEnum[]  | namespace.type[]  |
+|  RefTable  | namespace.Record[] |
+| RefTable[] | namespace.Record[][] |
 |  Template  | namespace.Record  |
 | Template[] | namespace.Record[] |
 |   Object   |   type (Record)   |
@@ -138,9 +142,11 @@ Notes:
 * `Enum` support empty string type
 * `Enum[]` union contains every value actually present in the data (including `""` for empty slots)
 * `EnumIndex` will generate index type, and will use `Enum` type to generate interface
-* `Ref` / `RefEnum` reference another csv's Record/enum by id: `Ref[file]` is one row (`file.Map["id"]`), `Ref[file][]` is an array of rows with comma-separated ids (`[file.Map["1"],file.Map["2"]]`, typed `File.Record[]`); use `Object[]` for inline private structures and `Ref[]` for shared, identity-bearing rows
-* `Template[file]` inherits a whole row from another table and overrides selected fields: a cell is `<baseId>|<key>:<value>,<key>:<value>` — a pipe separates the base row id from override pairs (e.g. `101|damage:150,range:8`), emitting `{ ...file.Map["101"], damage: 150, range: 8 }` typed `File.Record`; with no overrides the cell is just the id and emits a plain `file.Map["id"]` like `Ref`. Override values may be bare scalars or bracket-wrapped composites mirroring the generated TS syntax — arrays as `[v1,v2]` (e.g. `Params:[6,2.07]`, required for array-typed fields; a bare `Params:6,2.07` gets chopped by the pair comma and prints a warning) and flat objects as `{k:v,k:v}`. `Template[file][]` separates entries with `;` (the same element separator as `Object[]`), e.g. `101|damage:150;102|heal:500` emits `[{ ...file.Map["101"], damage: 150 },{ ...file.Map["102"], heal: 500 }]`. Override key typos and value-type mismatches fail at tsc compile time; overrides are flat top-level fields (no dot-path deep merge), and the target table must have an Index/EnumIndex Map
-* Merge order is resolved automatically: tables are topologically sorted so every referenced table (`Ref`/`RefEnum`/`Template`) is emitted before the tables referencing it — no filename tricks needed; tables without a dependency relation keep alphabetical order. Circular references (`a.csv -> b.csv -> a.csv`) and references to missing files print a warning
+* `Ref` / `RefEnum` reference another csv's Record/enum by id: `Ref[table]` is one row (`table.Map["id"]`), `Ref[table][]` is an array of rows with comma-separated ids (`[table.Map["1"],table.Map["2"]]`, typed `File.Record[]`); use `Object[]` for inline private structures and `Ref[]` for shared, identity-bearing rows
+* `Template[table]` inherits a whole row from another table and overrides selected fields: a cell is `<baseId>|<key>:<value>,<key>:<value>` — a pipe separates the base row id from override pairs (e.g. `101|damage:150,range:8`), emitting `{ ...table.Map["101"], damage: 150, range: 8 }` typed `File.Record`; with no overrides the cell is just the id and emits a plain `table.Map["id"]` like `Ref`. Override values may be bare scalars or bracket-wrapped composites mirroring the generated TS syntax — arrays as `[v1,v2]` (e.g. `Params:[6,2.07]`, required for array-typed fields; a bare `Params:6,2.07` gets chopped by the pair comma and prints a warning) and flat objects as `{k:v,k:v}`. `Template[table][]` separates entries with `;` (the same element separator as `Object[]`), e.g. `101|damage:150;102|heal:500` emits `[{ ...table.Map["101"], damage: 150 },{ ...table.Map["102"], heal: 500 }]`. Override key typos and value-type mismatches fail at tsc compile time; overrides are flat top-level fields (no dot-path deep merge), and the target table must have an Index/EnumIndex Map
+* Reference targets are written as **table names without the extension** (`Ref[skill]` → `skill.csv`); the full file name (`Ref[skill.csv]`) still works, and an ambiguous stem (`skill.csv` + `skill.ini`) warns and needs the full name
+* **Homogeneous subdirectories merge into one table named after the directory**: when every csv in a subdirectory shares the same header and type rows, `story/ch01.csv` … → `StoryCsv`, rows concatenated in file-name order. The merged table has no flat `List`; it exports `FileMap` grouped by member file plus `type File = "ch01" | ...` and `refTable(file: File)`; `RefTable[story]` references a whole member sub-table by file name (typed `StoryCsv.Record[]`, `File` union makes an unknown name a compile error). Member files that nothing references are allowed. See [`fixtures/08-story`](fixtures/08-story)
+* Merge order is resolved automatically: tables are topologically sorted so every referenced table (`Ref`/`RefEnum`/`Template`/`RefTable`) is emitted before the tables referencing it — no filename tricks needed; tables without a dependency relation keep alphabetical order. Circular references (`a.csv -> b.csv -> a.csv`) and references to missing files print a warning
 * `Object` parse `key:value,key:value` format, auto-infer value types (number/boolean/string), generates a dedicated `type` that merges all keys
 * `Object[]` separates objects with `;` while commas still separate `key:value` pairs inside each object (same syntax as the `Object` type), e.g. `num:1,,str:a;num:2` makes `[{num:1,str:'a'},{num:2}]`, a bare `;` makes `[{},{}]`; generates a dedicated element `type` merging all keys with the field typed as `type[]`
 * Array convention: primitive arrays (`String[]`/`Number[]`/`Enum[]`/`RefEnum[...] []`) separate elements with `,` and `Object[]` separates objects with `;`; raw cell values are normalized (CRLF/CR unified to LF, whitespace trimmed); an empty cell generates `[]`; otherwise n separators make n+1 slots and every slot is kept (including interior or trailing ones) so parallel arrays stay index-aligned. Empty slots use the type's own zero value — `''` for string/enum/ref-enum, `0` for number, `{}` for empty object slots; `null` is never generated

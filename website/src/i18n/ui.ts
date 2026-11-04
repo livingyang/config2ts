@@ -204,9 +204,9 @@ export namespace UiCsv {
         },
         {
             key: 'case.08-story.desc',
-            zh: '子目录内所有 CSV 表头与类型行完全一致时，合并导出为一个与子目录同名的表（story/ → StoryCsv）；三个章节文件各自维护，运行时只加载一张表。',
-            en: 'When every csv in a subdirectory shares the same header and type rows they merge into ONE table named after the directory (story/ → StoryCsv); chapters stay as separate files',
-            ja: 'the runtime loads a single table.',
+            zh: '子目录内所有 CSV 表头与类型行完全一致时，合并导出为一个与子目录同名的表（story/ → StoryCsv）；每章一个文件、运行时只加载一张表，章节索引用 RefTable 引用整章子表（写错章节名编译期报错），另有一个未被引用的章节演示允许存在未引用子表。',
+            en: 'When every csv in a subdirectory shares the same header and type rows they merge into ONE table named after the directory (story/ → StoryCsv); one file per chapter',
+            ja: 'one table at runtime',
         }
     ];
 
