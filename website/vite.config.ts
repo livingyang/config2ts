@@ -15,11 +15,17 @@ const toolVersion = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf-8"),
 ).version as string;
 
+// Same treatment for the changelog: read the repo-root CHANGELOG.md at build
+// time and inject it, so the site changelog is byte-identical to the file
+// GitHub / npm consumers read — no duplicated copy to keep in sync.
+const changelog = readFileSync(new URL("../CHANGELOG.md", import.meta.url), "utf-8");
+
 export default defineConfig({
   base: "/config2ts/",
   plugins: [vue()],
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(toolVersion),
+    "import.meta.env.VITE_CHANGELOG": JSON.stringify(changelog),
   },
   server: {
     fs: {

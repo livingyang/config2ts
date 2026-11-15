@@ -3,6 +3,7 @@ Index,String,String,String
 site.tagline,配置表 → 类型安全 TypeScript,Config tables → type-safe TypeScript,設定表 → 型安全な TypeScript
 nav.docs,文档,Docs,ドキュメント
 nav.cases,功能用例,Examples,サンプル
+nav.changelog,更新日志,Changelog,Changelog
 lang.zh,中文,Chinese,中国語
 lang.en,English,English,英語
 lang.ja,日本語,Japanese,日本語

@@ -29,6 +29,12 @@ export namespace UiCsv {
             ja: 'サンプル',
         },
         {
+            key: 'nav.changelog',
+            zh: '更新日志',
+            en: 'Changelog',
+            ja: 'Changelog',
+        },
+        {
             key: 'lang.zh',
             zh: '中文',
             en: 'Chinese',

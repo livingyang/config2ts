@@ -29,6 +29,13 @@ const version = (import.meta.env.VITE_APP_VERSION as string) || "";
         </RouterLink>
         <RouterLink
           class="nav-item"
+          :class="{ active: route.name === 'changelog' }"
+          :to="{ name: 'changelog' }"
+        >
+          {{ t("nav.changelog") }}
+        </RouterLink>
+        <RouterLink
+          class="nav-item"
           :class="{ active: inCaseView }"
           :to="{ name: 'case', params: { caseId: fixtures[0]?.id ?? '' } }"
         >
