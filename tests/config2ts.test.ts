@@ -195,6 +195,45 @@ test("RefTable to a table without sub-tables warns", function () {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
+// A Boolean cell used to go through the global Boolean() constructor, so every
+// non-empty cell was true — "0" and "false" included. Parse the documented
+// tokens instead, and keep an unknown token false while warning about it.
+test("Boolean cells parse 0/false/no as false, 1/true/yes as true", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const csvPath = path.join(tmpDir, "flags.csv");
+  const cells = ["0", "false", "FALSE", "", "1", "true", "TRUE", "yes", "off", "0.0", "1.00"];
+  fs.writeFileSync(csvPath, ["id,flag", "Index,Boolean", ...cells.map((cell, i) => `${i + 1},${cell}`)].join("\n"));
+  const generated = GetTsStringFromFileList([csvPath]);
+  const values = generated.split("\n").filter((line) => line.includes("flag: ")).map((line) => line.trim().replace(/,$/, ""));
+  assert.deepEqual(values, [
+    "flag: boolean;",
+    "flag: false",
+    "flag: false",
+    "flag: false",
+    "flag: false",
+    "flag: true",
+    "flag: true",
+    "flag: true",
+    "flag: true",
+    "flag: false",
+    "flag: false",
+    "flag: true",
+  ]);
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+test("an unrecognized Boolean token warns and becomes false", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const csvPath = path.join(tmpDir, "flags.csv");
+  fs.writeFileSync(csvPath, ["id,flag", "Index,Boolean", "1,ture"].join("\n"));
+  const warnings = captureWarnings(() => GetTsStringFromFileList([csvPath]));
+  assert.equal(warnings.length, 1);
+  assert.ok(warnings[0].includes('value "ture" is not a boolean'));
+  const generated = GetTsStringFromFileList([csvPath]);
+  assert.ok(generated.includes("flag: false,"));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
 // FileMap is keyed by a literal union of the member file names, so a RefTable
 // cell naming a sub-table that does not exist must fail at compile time
 // instead of silently yielding undefined at runtime.

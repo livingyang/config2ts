@@ -139,6 +139,7 @@ Notes:
 |  Object[]  | type[] (Record[]) |
 
 * `Number` support Infinity and NaN
+* `Boolean` reads the tokens people actually type in a config table: `true/false` (case-insensitive), `1/0`, `yes/no`, `on/off`, plus `0.0`/`1.00` from spreadsheet exports; an empty cell is `false`; any other value prints a warning and becomes `false`. JS truthiness is never used, so `0` and `false` are `false`
 * `Enum` support empty string type
 * `Enum[]` union contains every value actually present in the data (including `""` for empty slots)
 * `EnumIndex` will generate index type, and will use `Enum` type to generate interface

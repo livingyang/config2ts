@@ -77,7 +77,7 @@ export namespace DataCsv {
         {
             id: '4',
             name: '444',
-            bool: true,
+            bool: false,
             num: Infinity,
             mytype: 'type2',
             stringarray: ['','1','','b'],

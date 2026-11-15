@@ -92,6 +92,8 @@ function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[
           d[k] = parseObject(d[k]) as any;
         } else if (convert[k] === ObjectArrayString) {
           d[k] = parseObjectArray(d[k]) as any;
+        } else if (convert[k] === "Boolean") {
+          d[k] = parseBooleanCell(d[k], { moduleName, row: i, field: k }) as any;
         } else if (typeof (global as any)[convert[k]] === "function") {
           d[k] = (global as any)[convert[k]](d[k]);
         } else if (convert[k] === "String[]" || convert[k] === "Enum[]") {
@@ -455,6 +457,25 @@ function parseObjectArray(str: string): Record<string, any>[] {
     return [];
   }
   return str.split(/[;\n]/).map((part) => parseObject(part));
+}
+
+// A CSV cell is always a string, so handing it to the global Boolean()
+// constructor makes every non-empty cell true — including "0" and "false".
+// Parse the tokens people actually type in config tables instead, and keep an
+// unknown value false with a warning: silently turning a typo into true is the
+// worse failure mode.
+const BooleanTrueTokens = ["true", "1", "yes", "y", "on"];
+const BooleanFalseTokens = ["", "false", "0", "no", "n", "off"];
+
+function parseBooleanCell(raw: string, context: { moduleName: string; row: number; field: string }): boolean {
+  const value = raw.trim().toLowerCase();
+  if (BooleanTrueTokens.includes(value)) return true;
+  if (BooleanFalseTokens.includes(value)) return false;
+  // Spreadsheet exports often write 0.0 / 1.00 for booleans.
+  const num = Number(value);
+  if (!Number.isNaN(num) && (num === 0 || num === 1)) return num === 1;
+  console.warn(`[config2ts] warning: ${context.moduleName} row ${context.row} field "${context.field}" value "${raw}" is not a boolean (expected true/false, 1/0, yes/no or on/off), treated as false`);
+  return false;
 }
 
 function parseObjectValue(value: string): any {

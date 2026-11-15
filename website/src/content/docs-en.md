@@ -173,7 +173,7 @@ fruit = 2
 | `Index` | `string` | Index field, used to generate the Map |
 | `String` | `string` | String type |
 | `Number` | `number` | Number type, supports `Infinity` and `NaN` |
-| `Boolean` | `boolean` | Boolean type |
+| `Boolean` | `boolean` | Boolean: `true/false` (case-insensitive), `1/0`, `yes/no`, `on/off` all work; an empty cell is `false`; anything else warns and becomes `false` |
 | `Enum` | union type | Enum type, values auto-extracted |
 | `EnumIndex` | union type | Enum type used as the index |
 | `String[]` | `string[]` | String array |

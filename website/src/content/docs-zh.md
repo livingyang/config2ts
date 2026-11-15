@@ -172,7 +172,7 @@ fruit = 2
 | `Index` | `string` | 索引字段，用于生成 Map |
 | `String` | `string` | 字符串类型 |
 | `Number` | `number` | 数字类型，支持 Infinity 和 NaN |
-| `Boolean` | `boolean` | 布尔类型 |
+| `Boolean` | `boolean` | 布尔类型：`true/false`（大小写不敏感）、`1/0`、`yes/no`、`on/off` 均可，空单元格为 `false`；其余值告警并按 `false` 处理 |
 | `Enum` | 联合类型 | 枚举类型，自动提取所有值 |
 | `EnumIndex` | 联合类型 | 枚举类型并作为索引 |
 | `String[]` | `string[]` | 字符串数组 |
