@@ -40,7 +40,7 @@ export const Convert: Record<string, ConvertHandler> = {
   },
 };
 
-function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[]): string {
+function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[], autoQualify: boolean = false): string {
   let convert: Record<string, string> = {};
   const refFields: string[] = [];
   const refEnumFields: string[] = [];
@@ -165,6 +165,21 @@ function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[
     }
   }) as any[];
 
+  // Detect the key column up front so the optional auto-qualify feature can
+  // inject a `localIndex` field before the Record interface is emitted.
+  let indexField: string | null = null;
+  if (autoQualify && subTables && subTables.length > 0) {
+    for (const f in convert) {
+      if (convert[f] === IndexStr || convert[f] === EnumIndexStr) {
+        indexField = f;
+        if (!("localIndex" in convert)) {
+          convert["localIndex"] = "String";
+        }
+        break;
+      }
+    }
+  }
+
   delete (result as any).columns;
   if (groupOffsets.length > 0 && rowGroups.length !== groupOffsets[groupOffsets.length - 1].end) {
     console.warn(`[config2ts] warning: ${moduleName} sub-table row counts do not match the merged content, FileMap will not be generated`);
@@ -240,7 +255,6 @@ function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[
   const largeTable = result.length > maxRowsToKeepEnumKeyType;
 
   template += "    export interface Record {\n";
-  let indexField: string | null = null;
   for (const field in convert) {
     let fieldType = "string";
 
@@ -248,7 +262,9 @@ function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[
       if (convert[field] == EnumStr) {
         fieldType = field;
       } else if (convert[field] == EnumIndexStr) {
-        fieldType = largeTable ? "string" : field;
+        // A qualified key column holds values like "file:1", so it must be a
+        // plain string even when the original column was an EnumIndex union.
+        fieldType = largeTable || (autoQualify && indexField === field) ? "string" : field;
         indexField = field;
       } else if (convert[field] == IndexStr) {
         indexField = field;
@@ -299,6 +315,21 @@ function csv2ts(csvString: string, moduleName: string, subTables?: SubTableInfo[
     }
     result.length = kept.length;
     rowGroups.length = kept.length;
+  }
+
+  // Auto-qualify merged-table keys (opt-in, --auto-qualify): prefix each row's
+  // key with its member file name ("<file>:<index>") so sibling files that each
+  // number from 1 never collide in the merged Map, and keep the original Index
+  // in a `localIndex` field.
+  if (autoQualify && indexField && groupOffsets.length > 0) {
+    for (let i = 0; i < result.length; i++) {
+      const group = rowGroups[i];
+      if (!group) continue;
+      const orig = result[i][indexField];
+      if (orig === "") continue;
+      result[i][indexField] = `${group}:${orig}`;
+      result[i]["localIndex"] = orig;
+    }
   }
 
   // Serialize every surviving row once; the same literals feed both the flat
@@ -441,6 +472,21 @@ function normalizeCell(str: string): string {
 function splitStringArray(str: string): string[] {
   if (str === "") {
     return [];
+  }
+  const trimmed = str.trim();
+  // A cell written as a JSON array literal (e.g. `["a,b","c"]`) is parsed as a
+  // real array, so elements may contain commas without CSV quoting. The legacy
+  // comma/line-feed separator rule still applies to every other cell, so this
+  // is fully backward compatible; an invalid JSON array falls back to splitting.
+  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    try {
+      const parsed = json5.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed.map((v: any) => String(v));
+      }
+    } catch {
+      // not valid JSON — fall through to the legacy separator rule
+    }
   }
   // Commas and line feeds both separate elements, so one value per line
   // works in multi-line cells (e.g. "a\nb" -> ['a','b']).
@@ -948,6 +994,8 @@ export interface ConvertUnit {
   refs: string[];
   // Merged subdirectories only: member files in data order.
   subTables?: SubTableInfo[];
+  // Opt-in: qualify merged keys as "<file>:<index>" (see --auto-qualify).
+  autoQualify?: boolean;
 }
 
 // Resolve a table reference to a full unit name. References are written
@@ -1045,7 +1093,7 @@ function makeFileUnit(filePath: string, allNames?: Set<string>): ConvertUnit {
 // directory ("<dir>.csv" -> pascalCase -> "<Dir>Csv"). Data rows are
 // concatenated in file-name order, so per-chapter/per-language splits stay
 // manageable on disk while the runtime sees a single table.
-function tryMergeSubdir(dir: string, dirName: string, allNames?: Set<string>): ConvertUnit | null {
+function tryMergeSubdir(dir: string, dirName: string, allNames?: Set<string>, autoQualify: boolean = false): ConvertUnit | null {
   const entries = fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isFile());
   const files = entries
     .map((e) => path.join(dir, e.name))
@@ -1076,7 +1124,7 @@ function tryMergeSubdir(dir: string, dirName: string, allNames?: Set<string>): C
   ];
   const mergedContent = csvFormatRows(allRows);
   const keyType = headRows[0][1][0];
-  if (keyType === IndexStr || keyType === EnumIndexStr) {
+  if (!autoQualify && (keyType === IndexStr || keyType === EnumIndexStr)) {
     const seen = new Set<string>();
     for (let i = 2; i < allRows.length; i++) {
       const key = allRows[i][0];
@@ -1099,6 +1147,7 @@ function tryMergeSubdir(dir: string, dirName: string, allNames?: Set<string>): C
     sourcePaths: files,
     refs: collectCsvReferencesFromContent(mergedRefsContent),
     subTables,
+    autoQualify,
   };
 }
 
@@ -1150,7 +1199,7 @@ function validateRefTableValues(units: ConvertUnit[]): void {
 // csv files are homogeneous (warned and skipped otherwise). Unit names are
 // predicted first, so extension-less table refs in the type rows can be
 // resolved before dependency collection.
-export function collectConvertUnits(dir: string): ConvertUnit[] {
+export function collectConvertUnits(dir: string, autoQualify: boolean = false): ConvertUnit[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1));
   const allNames = new Set<string>();
   for (const entry of entries) {
@@ -1176,7 +1225,7 @@ export function collectConvertUnits(dir: string): ConvertUnit[] {
       if (Convert[GetFileExt(entry.name)] == null) continue;
       take(makeFileUnit(full, allNames));
     } else if (entry.isDirectory()) {
-      const merged = tryMergeSubdir(full, entry.name, allNames);
+      const merged = tryMergeSubdir(full, entry.name, allNames, autoQualify);
       if (merged) take(merged);
     }
   }
@@ -1246,7 +1295,7 @@ function renderUnit(unit: ConvertUnit): string {
   // Merged subdirectories render through the sub-table-aware path so the
   // generated namespace also exposes FileMap (file name -> rows).
   if (unit.ext === "csv" && unit.subTables && unit.subTables.length > 0) {
-    return csv2ts(unit.content, moduleName, unit.subTables);
+    return csv2ts(unit.content, moduleName, unit.subTables, unit.autoQualify);
   }
   const handle = Convert[unit.ext];
   if (!handle) {
@@ -1296,8 +1345,8 @@ function buildImportLines(unit: ConvertUnit, validNames: Set<string>): string {
   return lines.join("\n");
 }
 
-export function startConvert(dir: string, outDir: string, merge: string, assetsDir?: string, mode: "single" | "split" = "single"): void {
-  const units = collectConvertUnits(dir);
+export function startConvert(dir: string, outDir: string, merge: string, assetsDir?: string, mode: "single" | "split" = "single", autoQualify: boolean = false): void {
+  const units = collectConvertUnits(dir, autoQualify);
   const fileCount = units.reduce((n, u) => n + u.sourcePaths.length, 0);
 
   if (mode === "split") {

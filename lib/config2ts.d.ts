@@ -13,11 +13,12 @@ export interface ConvertUnit {
     sourcePaths: string[];
     refs: string[];
     subTables?: SubTableInfo[];
+    autoQualify?: boolean;
 }
 export declare function resolveTableName(ref: string, names: Iterable<string>): string | null;
-export declare function collectConvertUnits(dir: string): ConvertUnit[];
+export declare function collectConvertUnits(dir: string, autoQualify?: boolean): ConvertUnit[];
 export declare function GetTsStringFromUnits(units: ConvertUnit[]): string;
 export declare function GetTsStringFromFileList(fileList: string[]): string;
 export declare function GetValidFileList(fileList: string[]): string[];
-export declare function startConvert(dir: string, outDir: string, merge: string, assetsDir?: string, mode?: "single" | "split"): void;
+export declare function startConvert(dir: string, outDir: string, merge: string, assetsDir?: string, mode?: "single" | "split", autoQualify?: boolean): void;
 export {};

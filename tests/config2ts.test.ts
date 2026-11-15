@@ -292,3 +292,115 @@ test("large table output compiles without ts(2590)", { timeout: 120000 }, functi
   assert.equal(failed, false);
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
+
+// A cell written as a JSON array literal (`["a,b","c"]`) parses as a real array,
+// so array elements may contain commas without CSV quoting. Cells that are not
+// valid JSON arrays still split on commas exactly as before (backward
+// compatible), and String fields keep their commas untouched. (json5 serializes
+// strings with single quotes, so assertions match that style.)
+test("JSON array literal cell parses as array, comma split unchanged", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const csvPath = path.join(tmpDir, "tags.csv");
+  // Row 1 uses JSON array literals (with commas inside); row 2 uses the legacy
+  // comma separator; `flag` is a plain String field and must keep its comma.
+  fs.writeFileSync(
+    csvPath,
+    [
+      "Index,labels,weights,flag",
+      "Index,String[],Number[],String",
+      '1,"[""a,b"",""c""]","[1,2,3]","hello,world"',
+      '2,"x,y,z",5,"plain"',
+    ].join("\n"),
+  );
+  const generated = GetTsStringFromFileList([csvPath]);
+  // JSON literal: the comma inside "a,b" is preserved as one element.
+  assert.ok(generated.includes("labels: ['a,b','c']"));
+  // JSON number array maps through Number[] correctly.
+  assert.ok(generated.includes("weights: [1,2,3]"));
+  // Legacy comma separator still works on a non-bracket cell.
+  assert.ok(generated.includes("labels: ['x','y','z']"));
+  // String fields are unaffected and keep their comma.
+  assert.ok(generated.includes("flag: 'hello,world'"));
+  // The JSON comma must NOT be split into separate elements.
+  assert.ok(!generated.includes("labels: ['a','b','c']"));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// A cell that only looks like an array but is not valid JSON falls back to the
+// legacy comma separator, so existing data never changes behavior.
+test("non-JSON bracket cell falls back to comma split", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const csvPath = path.join(tmpDir, "tags.csv");
+  // `[a,b]` is not valid JSON (unquoted), so it must split into ["[a","b]"].
+  fs.writeFileSync(csvPath, ["Index,labels", "Index,String[]", '1,"[a,b]"'].join("\n"));
+  const generated = GetTsStringFromFileList([csvPath]);
+  assert.ok(generated.includes("labels: ['[a','b]']"));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// --auto-qualify prefixes each merged row's key with its member file name
+// ("<file>:<index>") so sibling files that each number from 1 no longer
+// collide in the merged Map. The original Index survives in `localIndex`.
+test("auto-qualify merges tables with colliding Index keys", { timeout: 120000 }, function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const storyDir = path.join(tmpDir, "story");
+  fs.mkdirSync(storyDir);
+  fs.writeFileSync(path.join(storyDir, "dinomap.csv"), ["Index,text", "Index,String", "1,alpha", "2,beta"].join("\n"));
+  fs.writeFileSync(path.join(storyDir, "halloween.csv"), ["Index,text", "Index,String", "1,gamma", "2,delta"].join("\n"));
+
+  // No duplicate-key warning once the keys are qualified.
+  const warnings = captureWarnings(() => GetTsStringFromUnits(collectConvertUnits(tmpDir, true)));
+  assert.deepEqual(warnings, []);
+
+  const generated = GetTsStringFromUnits(collectConvertUnits(tmpDir, true));
+  assert.ok(generated.includes("export namespace StoryCsv"));
+  // Keys are qualified by member file name.
+  assert.ok(generated.includes("Index: 'dinomap:1'"));
+  assert.ok(generated.includes("Index: 'dinomap:2'"));
+  assert.ok(generated.includes("Index: 'halloween:1'"));
+  assert.ok(generated.includes("Index: 'halloween:2'"));
+  // Original Index preserved in localIndex.
+  assert.ok(generated.includes("localIndex: '1'"));
+  assert.ok(generated.includes("localIndex: '2'"));
+  // The key column and localIndex are plain strings so the qualified values compile.
+  assert.ok(generated.includes("        Index: string;"));
+  assert.ok(generated.includes("        localIndex: string;"));
+  // Map is keyed by the qualified id, so no row is silently overwritten.
+  assert.ok(generated.includes("Map[v.Index] = v;"));
+
+  // The generated namespace must be valid TypeScript on its own.
+  function compile(tsPath: string): { failed: boolean; output: string } {
+    const tscPath = path.join(rootDir, "node_modules/typescript/bin/tsc");
+    try {
+      execFileSync(process.execPath, [tscPath, "--noEmit", "--skipLibCheck", "--target", "ES2021", "--module", "ES2022", tsPath], { encoding: "utf-8" });
+      return { failed: false, output: "" };
+    } catch (e: unknown) {
+      const err = e as { stdout?: string; stderr?: string; message?: string };
+      return { failed: true, output: `${err.stdout ?? ""}${err.stderr ?? ""}${err.message ?? ""}` };
+    }
+  }
+  const tsPath = path.join(tmpDir, "story.ts");
+  fs.writeFileSync(tsPath, generated);
+  assert.equal(compile(tsPath).failed, false);
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// Without --auto-qualify the legacy behavior is untouched: colliding Index keys
+// still warn, no localIndex column is emitted, and keys are not qualified.
+test("auto-qualify off keeps legacy duplicate-key warning and no localIndex", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const storyDir = path.join(tmpDir, "story");
+  fs.mkdirSync(storyDir);
+  fs.writeFileSync(path.join(storyDir, "dinomap.csv"), ["Index,text", "Index,String", "1,alpha", "2,beta"].join("\n"));
+  fs.writeFileSync(path.join(storyDir, "halloween.csv"), ["Index,text", "Index,String", "1,gamma", "2,delta"].join("\n"));
+
+  const warnings = captureWarnings(() => GetTsStringFromUnits(collectConvertUnits(tmpDir)));
+  assert.ok(warnings.some((w) => w.includes("duplicate Index key")));
+
+  const generated = GetTsStringFromUnits(collectConvertUnits(tmpDir));
+  assert.ok(!generated.includes("localIndex"));
+  // Keys are NOT qualified when the flag is off.
+  assert.ok(generated.includes("Index: '1'"));
+  assert.ok(!generated.includes("dinomap:1"));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});

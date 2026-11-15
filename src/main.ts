@@ -15,6 +15,7 @@ program
   .option("-o, --outDir <path>", "set outDir path")
   .option("-a, --assets <path>", "set assets resource directory for asset index (optional, skip asset index if omitted)")
   .option("-m, --mode <mode>", "output mode: single (merge into one file) or split (one file per table + index.ts)", "single")
+  .option("--auto-qualify", "qualify merged-table keys as <file>:<index> so sibling member files that each number from 1 never collide", false)
   .parse(process.argv);
 
 const options = program.opts();
@@ -39,4 +40,5 @@ if (mode === "single" && options.mode !== "single") {
   console.warn(`[config2ts] warning: unknown mode "${options.mode}", falling back to "single"`);
 }
 
-startConvert(dir, outDir, options.name, assetsDir, mode);
+const autoQualify = options.autoQualify === true || options.autoQualify === "true";
+startConvert(dir, outDir, options.name, assetsDir, mode, autoQualify);
