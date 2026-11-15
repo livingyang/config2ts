@@ -56,6 +56,9 @@ config2ts [options]
 | `--mode <mode>` | `-m` | 输出模式：`single` 合并为单文件 / `split` 每表一个文件并生成 `index.ts` | `single` |
 | `--version` | `-V` | 输出版本号 | - |
 | `--help` | `-h` | 显示帮助 | - |
+| `--auto-qualify` | - | 合并子目录时自动把主键限定为 `<文件名>:<索引>` 并保留原始 `localIndex`，消除跨文件主键重复的告警（详见下方『同构子目录合并』） | 关闭 |
+| `--strict` | - | 把结构性跳过（无法合并的子目录等）从告警升级为错误，退出码非 0，适合 CI 门禁 | 关闭 |
+| `--verify-against <ref>` | - | 将生成结果与参考快照（`.ts` 或 `.json` 的 `source` 字段）比对，不一致则退出非 0 且不写文件，适合漂移校验 | 无 |
 
 ### 使用示例
 
@@ -113,7 +116,7 @@ dist/
 
 `-d` 目录下的一级子目录如果满足：**内部全部是 CSV，且所有文件的表头行与类型行完全一致**，就会被合并导出为**一个与子目录同名的表**（`story/ch01.csv`、`story/ch02.csv`、`story/ch03.csv` → `StoryCsv`）。数据行按文件名字典序拼接，只有第一个文件的表头/类型行保留。可运行的完整示例见 [fixtures/08-story](https://github.com/livingyang/config2ts/tree/master/fixtures/08-story)（莎士比亚《哈姆雷特》公版剧本改编的三章剧情：每章一个文件独立维护，运行时只加载一张 `StoryCsv` 表；另有一个 `ch04` 故意不被任何表引用，演示"允许存在未被引用的子表"）。
 
-适用场景：按章节/语言/关卡拆分的同构表——文件多了不好管理，合并后又不想手工拼接。合并时若主键列（`Index`/`EnumIndex`）出现重复值会输出告警。不满足同构条件（表头或类型行不一致、混入 ini/toml、没有可转换文件）的子目录会输出告警并跳过，不影响其余文件。
+适用场景：按章节/语言/关卡拆分的同构表——文件多了不好管理，合并后又不想手工拼接。合并时若主键列（`Index`/`EnumIndex`）出现重复值会输出告警——多个文件各自从 1 开始编号时极易发生，且 `Map` 按 `Index` 写入会让后者覆盖前者、静默丢数据；用 `--auto-qualify` 可让工具自动限定主键并保留原始编号（见下方『自动限定合并键』）。不满足同构条件（表头或类型行不一致、混入 ini/toml、没有可转换文件）的子目录会输出告警并跳过，不影响其余文件。
 
 ```csv
 # story/ch01.csv（ch02.csv、ch03.csv、ch04.csv 表头与类型行完全相同）
@@ -129,6 +132,75 @@ StoryCsv.FileMap["ch01"];   // 第一章的全部节点
 StoryCsv.refTable("ch01");  // 同一个结果，参数类型是 File 字面量联合
 ```
 
+#### 自动限定合并键（--auto-qualify）
+
+当多个子文件各自独立编号（每个活动/章节都有 `1, 2, 3` 的 `Index`）时，合并后主键重复：默认会输出告警，且 `Map` 按 `Index` 写入时后者覆盖前者、静默丢数据。`--auto-qualify` 让工具在合并时自动把主键改写为 `<文件名>:<索引>`（如 `dinomap:1`、`halloween:1`），并把原始编号保留到新增的 `localIndex` 字段，同时抑制重复键告警。被限定的键列降级为 `string`（因为 `"dinomap:1"` 不再是某个枚举字面量），`Map` 仍按限定后的 id 建立；下游可用新增的 `byKey(key)` 做动态字符串查找，既不报 TS7053，也不会破坏 `FileMap` 的编译期类型护栏。
+
+```bash
+config2ts -d ./config -o ./src/types --auto-qualify
+```
+
+合并产物（示意）：
+
+```typescript
+export namespace StoryCsv {
+    export interface Record {
+        Index: string;        // 限定后的键："dinomap:1"
+        localIndex: string;   // 原始编号："1"
+        text: string;
+    };
+    export const List: Record[] = [
+        { Index: 'dinomap:1', localIndex: '1', text: 'alpha' },
+        { Index: 'halloween:1', localIndex: '1', text: 'gamma' },
+    ];
+    export const Map: { [id: string]: Record } = {};
+    for (const v of List) { Map[v.Index] = v; };
+
+    // 动态字符串查找：避免 FileMap[key] 报 TS7053，且不破坏编译期类型护栏
+    export function byKey(key: string): Record | undefined {
+        return (Map as { [k: string]: Record | undefined })[key];
+    }
+}
+```
+
+> `--auto-qualify` 默认关闭，现有生成物不受影响；它只改写合并表的键空间，不改变其它表的生成逻辑。
+
+#### 递归合并组（config2ts.manifest.json）
+
+默认只对 `-d` 目录的**一级**子目录做同构合并；嵌套更深的 CSV（如 `activities/<id>/timeline.csv`）会被静默跳过。在配置目录旁放一个 `config2ts.manifest.json`，用 `mergeGroups` 声明需要**递归**收集并合并的目录，即可把深层 CSV 扁平成一张虚拟表，子表键以相对路径命名：
+
+```json
+{
+  "mergeGroups": [
+    { "dir": "activities", "recursive": true }
+  ]
+}
+```
+
+```bash
+config2ts -d ./config -o ./src/types
+```
+
+该组目录在默认的一层合并循环中会被跳过，只由 manifest 路径处理，避免重复；组内文件若列不完全一致，按列并集处理（缺列补零值），仅当同一列类型冲突时才拒绝合并并告警。
+
+> 单独的 `# key:` / `# matrix:` 头部指令在合并成员里会被自动剥离，以免影响合并表头。
+
+### 质量闸门（--strict / --verify-against）
+
+合并扫描阶段若遇到无法合并的子目录，默认只输出告警并跳过其余文件。`--strict` 把这类结构性跳过升级为**错误并退出非 0**，可在 CI 中把"配置结构意外变化"变成构建失败而非悄悄带病发布：
+
+```bash
+config2ts -d ./config -o ./src/types --strict
+```
+
+`--verify-against <ref>` 把本次生成结果与一份**参考快照**比对，不一致就退出非 0 且不写任何文件——适合把"配置被手改 / 生成器升级"纳入门禁。参考文件可以是 `.ts`（直接是之前的生成产物），也可以是 `.json` 的 `{ "source": "<生成文本>" }` 形式；比对会忽略自动生成头与空白差异，只关心内容：
+
+```bash
+config2ts -d ./config -o ./src/types --verify-against ./snapshots/config.ts
+```
+
+> 比对在内存中完成，`--verify-against` 模式下不会写盘，可直接接在 `npm run fixtures:regen` 之后做"生成物漂移"检查。
+
 ## 支持的配置格式
 
 ### CSV
@@ -141,6 +213,41 @@ Index,String,Number
 1,张三,25
 2,李四,30
 ```
+
+#### 数组元素含逗号（JSON 字面量）
+
+`String[]` / `Number[]` 等数组默认按逗号分隔元素，但元素本身也含逗号时（如引用键 `"a,b"`）就无法用 CSV 引号区分。`splitStringArray` 在单元格以 `[` 开头、`]` 结尾时会先用内置的 `json5` 解析为数组，元素可含逗号；不是合法 JSON 数组则回退逗号切分，**完全向后兼容**。
+
+```csv
+id,tags,nums
+Index,String[],Number[]
+1,"[""a,b"",""c""]","[1,2,3]"
+```
+
+生成 `tags: ['a,b','c']`、`nums: [1,2,3]`；普通 `x,y,z` 仍按逗号切成 `['x','y','z']` 不变。
+
+#### 头部指令（# key / # matrix）
+
+CSV 首部可用以 `#` 开头的指令行声明表级行为（必须紧跟在字段名行之前、单独成行）：
+
+- `# key: <列名>`：显式指定某一列为主键（覆盖按类型推导主键的默认规则）。该列用于生成 `Map`；列不存在则告警并回退默认规则。
+- `# matrix: <string|number|boolean>`：把整张表作为**变长二维矩阵**导出，不逐行生成 `Record`。生成 `Matrix: Cell[][]`（含 `RowCount` / `ColCount`），适合邻接表、像素图、关卡网格等位置型数据。
+
+```csv
+# matrix: number
+1,2,3
+4,5
+6,7,8,9
+```
+
+```typescript
+export type Cell = number;
+export const Matrix: Cell[][] = [[1,2,3],[4,5],[6,7,8,9]];
+export const RowCount: number = 3;
+export const ColCount: number = 4;
+```
+
+> 矩阵模式与逐行 `Record` 互斥；同文件不能既做矩阵又声明 `Index`。
 
 ### INI
 

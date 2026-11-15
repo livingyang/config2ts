@@ -10,6 +10,8 @@ const route = useRoute();
 const inCaseView = computed(() => route.name === "case");
 const activeCaseId = computed(() => (route.name === "case" ? String(route.params.caseId) : ""));
 const docsTarget = computed(() => `/docs/${docsLang()}`);
+// Injected from the root package.json by vite.config.ts (see VITE_APP_VERSION).
+const version = (import.meta.env.VITE_APP_VERSION as string) || "";
 </script>
 
 <template>
@@ -17,6 +19,7 @@ const docsTarget = computed(() => `/docs/${docsLang()}`);
     <header class="topbar">
       <RouterLink class="brand" :to="docsTarget">
         <span class="logo">config2ts</span>
+        <span v-if="version" class="version" :title="`v${version}`">v{{ version }}</span>
         <span class="tagline">{{ t("site.tagline") }}</span>
       </RouterLink>
 
@@ -101,6 +104,16 @@ const docsTarget = computed(() => `/docs/${docsLang()}`);
   font-weight: 700;
   font-size: 18px;
   color: var(--accent);
+}
+.version {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  padding: 1px 8px;
+  border-radius: 999px;
+  line-height: 1.5;
 }
 .tagline {
   font-size: 13px;

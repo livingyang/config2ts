@@ -57,6 +57,9 @@ config2ts [options]
 | `--mode <mode>` | `-m` | Output mode: `single` merges into one file / `split` writes one file per table plus `index.ts` | `single` |
 | `--version` | `-V` | Print version number | - |
 | `--help` | `-h` | Show help | - |
+| `--auto-qualify` | - | When merging subdirectories, qualify each primary key as `<file>:<index>` and keep the original in `localIndex`, removing the cross-file duplicate-key warning (see "Isomorphic subdirectory merge" below) | off |
+| `--strict` | - | Escalate structural skips (un-mergeable subdirectories, etc.) from a warning to an error with a non-zero exit code — good for CI gates | off |
+| `--verify-against <ref>` | - | Compare generated output against a reference snapshot (`.ts`, or `.json` with a `source` field); exits non-zero on drift and writes no files — good for drift checks | none |
 
 ### Usage Examples
 
@@ -114,7 +117,7 @@ dist/
 
 A first-level subdirectory of the `-d` directory is merged into **one table named after the directory** when: it contains **only csv files, and every file shares identical header and type rows** (`story/ch01.csv`, `story/ch02.csv`, `story/ch03.csv` → `StoryCsv`). Data rows are concatenated in file-name order; only the first file's header/type rows are kept. A runnable example lives at [fixtures/08-story](https://github.com/livingyang/config2ts/tree/master/fixtures/08-story) (three chapters adapted from Shakespeare's *Hamlet*, public domain: one file per chapter for easy editing, one `StoryCsv` table at runtime; a fourth file `ch04` is intentionally unreferenced to show that unused sub-tables are allowed).
 
-Typical use: homogeneous tables split by chapter/language/level — many files are easier to maintain, but the runtime wants a single table. Duplicate primary keys (`Index`/`EnumIndex`) across merged rows print a warning. Subdirectories that don't qualify (mismatched header/type rows, mixed-in ini/toml, nothing convertible) are warned and skipped; other files are unaffected.
+Typical use: homogeneous tables split by chapter/language/level — many files are easier to maintain, but the runtime wants a single table. Duplicate primary keys (`Index`/`EnumIndex`) across merged rows print a warning — this happens easily when every file numbers from 1, and because `Map` is written by `Index`, the later row silently overwrites the earlier one and data is lost; `--auto-qualify` lets the tool qualify the keys automatically while keeping the original number (see "Auto-qualify merged keys" below). Subdirectories that don't qualify (mismatched header/type rows, mixed-in ini/toml, nothing convertible) are warned and skipped; other files are unaffected.
 
 ```csv
 # story/ch01.csv (ch02.csv, ch03.csv and ch04.csv share the exact same header/type rows)
@@ -130,6 +133,75 @@ StoryCsv.FileMap["ch01"];   // every node of chapter one
 StoryCsv.refTable("ch01");  // same result, parameter typed as the File union
 ```
 
+#### Auto-qualify merged keys (--auto-qualify)
+
+When several member files number independently (each activity/chapter has `Index` values `1, 2, 3`), the merged keys collide: by default a warning is printed, and because `Map` is keyed by `Index`, the later row overwrites the earlier one and data is silently lost. `--auto-qualify` rewrites each merged row's key to `<file>:<index>` (e.g. `dinomap:1`, `halloween:1`) and keeps the original number in a new `localIndex` field, while suppressing the duplicate-key warning. The qualified key column is downgraded to `string` (because `"dinomap:1"` is no longer an enum literal), and `Map` is still keyed by the qualified id; consumers can use the new `byKey(key)` for dynamic string lookups — it avoids the TS7053 error on dynamic `FileMap` indexing without tearing down the compile-time type guard.
+
+```bash
+config2ts -d ./config -o ./src/types --auto-qualify
+```
+
+Merged output (illustrative):
+
+```typescript
+export namespace StoryCsv {
+    export interface Record {
+        Index: string;        // qualified key: "dinomap:1"
+        localIndex: string;   // original number: "1"
+        text: string;
+    };
+    export const List: Record[] = [
+        { Index: 'dinomap:1', localIndex: '1', text: 'alpha' },
+        { Index: 'halloween:1', localIndex: '1', text: 'gamma' },
+    ];
+    export const Map: { [id: string]: Record } = {};
+    for (const v of List) { Map[v.Index] = v; };
+
+    // dynamic string lookup: avoids TS7053 on FileMap[key] without losing the type guard
+    export function byKey(key: string): Record | undefined {
+        return (Map as { [k: string]: Record | undefined })[key];
+    }
+}
+```
+
+> `--auto-qualify` is off by default and does not change existing output; it only rewrites the merged table's key space, leaving every other table's generation logic untouched.
+
+#### Recursive merge groups (config2ts.manifest.json)
+
+By default only **first-level** subdirectories of `-d` are merged isomorphically; deeper CSVs (e.g. `activities/<id>/timeline.csv`) are silently skipped. Place a `config2ts.manifest.json` next to the config directory and declare `mergeGroups` for directories that should be collected **recursively** and merged into one virtual table, with sub-table keys named by relative path:
+
+```json
+{
+  "mergeGroups": [
+    { "dir": "activities", "recursive": true }
+  ]
+}
+```
+
+```bash
+config2ts -d ./config -o ./src/types
+```
+
+The group directory is skipped by the default single-level merge loop and handled only by the manifest path, so it is never processed twice; if member files don't share every column, a column union is used (missing columns padded with zero values), and the merge is rejected with a warning only when the same column has conflicting types across files.
+
+> Standalone `# key:` / `# matrix:` header directives inside merge members are stripped automatically so they don't corrupt the merged header.
+
+### Quality gates (--strict / --verify-against)
+
+During the merge scan, an un-mergeable subdirectory is only warned and the other files are skipped by default. `--strict` escalates such structural skips to an **error with a non-zero exit code**, turning "the config structure changed unexpectedly" into a build failure instead of a silent, broken release:
+
+```bash
+config2ts -d ./config -o ./src/types --strict
+```
+
+`--verify-against <ref>` compares this run's output against a **reference snapshot** and exits non-zero without writing anything when they differ — good for gating "config was hand-edited / the generator was upgraded". The reference may be a `.ts` file (the previous generated artifact directly) or a `.json` of the form `{ "source": "<generated text>" }`; the comparison ignores the auto-generated header and whitespace so it only cares about content:
+
+```bash
+config2ts -d ./config -o ./src/types --verify-against ./snapshots/config.ts
+```
+
+> The comparison runs in memory; in `--verify-against` mode nothing is written to disk, so it can run right after `npm run fixtures:regen` as a "generated-output drift" check.
+
 ## Supported Config Formats
 
 ### CSV
@@ -142,6 +214,41 @@ Index,String,Number
 1,Alice,25
 2,Bob,30
 ```
+
+#### Array elements containing commas (JSON literals)
+
+`String[]` / `Number[]` and friends split elements on commas by default, but an element that itself contains a comma (e.g. a reference key `"a,b"`) can't be distinguished with CSV quoting. When a cell starts with `[` and ends with `]`, `splitStringArray` parses it first with the built-in `json5` so elements may contain commas; if it isn't a valid JSON array it falls back to comma splitting — **fully backward compatible**.
+
+```csv
+id,tags,nums
+Index,String[],Number[]
+1,"[""a,b"",""c""]","[1,2,3]"
+```
+
+Generates `tags: ['a,b','c']` and `nums: [1,2,3]`; a plain `x,y,z` still splits into `['x','y','z']` unchanged.
+
+#### Header directives (# key / # matrix)
+
+A `#`-prefixed directive line at the very top of a CSV (immediately before the field-name row, on its own line) declares table-level behavior:
+
+- `# key: <column>` — explicitly name a column as the primary key (overriding the default type-based key detection). That column drives `Map`; if the column doesn't exist, a warning is printed and the default rule is used.
+- `# matrix: <string|number|boolean>` — emit the whole file as a **variable-length 2D matrix** instead of per-row `Record`s. Generates `Matrix: Cell[][]` (with `RowCount` / `ColCount`), suited to adjacency maps, pixel grids, level layouts, and other purely positional data.
+
+```csv
+# matrix: number
+1,2,3
+4,5
+6,7,8,9
+```
+
+```typescript
+export type Cell = number;
+export const Matrix: Cell[][] = [[1,2,3],[4,5],[6,7,8,9]];
+export const RowCount: number = 3;
+export const ColCount: number = 4;
+```
+
+> Matrix mode and per-row `Record`s are mutually exclusive; the same file can't be both a matrix and declare an `Index`.
 
 ### INI
 
