@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 // Compiled together with src by tsconfig.test.json, so this resolves to
 // .test-build/src/config2ts.js at runtime (same compiler options as the lib build).
-import { GetTsStringFromFileList, GetTsStringFromUnits, GetValidFileList, collectConvertUnits, resolveTableName } from "../src/config2ts";
+import { GetTsStringFromFileList, GetTsStringFromUnits, GetValidFileList, collectConvertUnits, resolveTableName, verifyAgainst } from "../src/config2ts";
 
 // Compiled to .test-build/tests/, so the repository root is two levels up.
 const rootDir = path.resolve(__dirname, "../..");
@@ -37,6 +37,19 @@ function captureWarnings(run: () => void): string[] {
     console.warn = original;
   }
   return warnings;
+}
+
+// Compile a generated .ts file with tsc (no emit) so tests can assert the
+// output is valid TypeScript on its own.
+function compileTs(tsPath: string): { failed: boolean; output: string } {
+  const tscPath = path.join(rootDir, "node_modules/typescript/bin/tsc");
+  try {
+    execFileSync(process.execPath, [tscPath, "--noEmit", "--skipLibCheck", "--target", "ES2021", "--module", "ES2022", tsPath], { encoding: "utf-8" });
+    return { failed: false, output: "" };
+  } catch (e: unknown) {
+    const err = e as { stdout?: string; stderr?: string; message?: string };
+    return { failed: true, output: `${err.stdout ?? ""}${err.stderr ?? ""}${err.message ?? ""}` };
+  }
 }
 
 // Merging several tables in a single call is what the CLI does for every run,
@@ -402,5 +415,150 @@ test("auto-qualify off keeps legacy duplicate-key warning and no localIndex", fu
   // Keys are NOT qualified when the flag is off.
   assert.ok(generated.includes("Index: '1'"));
   assert.ok(!generated.includes("dinomap:1"));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// Proposal #5: every index-keyed namespace (plain or merged) emits `byKey`, a
+// dynamic-string lookup that returns undefined instead of raising TS7053 in
+// consumer code. The generated file must still compile.
+test("byKey dynamic lookup is emitted and compiles", { timeout: 120000 }, function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  fs.writeFileSync(path.join(tmpDir, "items.csv"), ["id,name", "Index,String", "1,a", "2,b"].join("\n"));
+  const generated = GetTsStringFromFileList([path.join(tmpDir, "items.csv")]);
+  assert.ok(generated.includes("export function byKey(key: string): Record | undefined"));
+  const tsPath = path.join(tmpDir, "items.ts");
+  fs.writeFileSync(tsPath, generated);
+  assert.equal(compileTs(tsPath).failed, false);
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// Proposal #7: `# key: <col>` declares a non-Index column as the primary key.
+test("hash-key directive declares a custom primary key column", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const csvPath = path.join(tmpDir, "things.csv");
+  fs.writeFileSync(
+    csvPath,
+    ["# key: code", "name,code,desc", "String,Number,String", "alpha,1,first", "beta,2,second"].join("\n"),
+  );
+  const generated = GetTsStringFromFileList([csvPath]);
+  assert.ok(generated.includes("export namespace ThingsCsv"));
+  // The declared column drives the Map key, not the (absent) Index column.
+  assert.ok(generated.includes("        code: number;"));
+  assert.ok(generated.includes("Map[v.code] = v;"));
+  assert.ok(generated.includes("export function byKey(key: string): Record | undefined"));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// A `# key:` directive naming a missing column warns and falls back to
+// type-based key detection instead of silently mis-keying the table.
+test("hash-key directive with unknown column warns and falls back", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const csvPath = path.join(tmpDir, "things.csv");
+  fs.writeFileSync(csvPath, ["# key: missing", "id,name", "Index,String", "1,a"].join("\n"));
+  const warnings = captureWarnings(() => GetTsStringFromFileList([csvPath]));
+  assert.ok(warnings.some((w) => w.includes("# key: missing") && w.includes("does not exist")));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// Proposal #4b: `# matrix: <type>` emits the whole file as a variable-length
+// 2D grid (Matrix: T[][]) instead of per-row Records; row lengths are kept.
+test("hash-matrix directive emits a variable-length 2D matrix", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const csvPath = path.join(tmpDir, "board.csv");
+  fs.writeFileSync(csvPath, ["# matrix: number", "1,2,3", "4,5", "6,7,8,9"].join("\n"));
+  const generated = GetTsStringFromFileList([csvPath]);
+  assert.ok(generated.includes("export namespace BoardCsv"));
+  assert.ok(generated.includes("export type Cell = number;"));
+  assert.ok(generated.includes("export const Matrix: Cell[][] = [[1,2,3],[4,5],[6,7,8,9]];"));
+  // Variable-length rows are preserved (no C0..Cn padding).
+  assert.ok(generated.includes("export const RowCount: number = 3;"));
+  assert.ok(generated.includes("export const ColCount: number = 4;"));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// Proposal #2 (lightweight): merged member files may omit optional columns;
+// the missing cells are padded with empty (parsed to the column's type default)
+// rather than rejecting the whole merge.
+test("optional columns merge files that omit some columns", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const storyDir = path.join(tmpDir, "story");
+  fs.mkdirSync(storyDir);
+  fs.writeFileSync(path.join(storyDir, "ch01.csv"), ["id,text,flag", "Index,String,String", "a,one,x"].join("\n"));
+  fs.writeFileSync(path.join(storyDir, "ch02.csv"), ["id,text", "Index,String", "b,two"].join("\n"));
+  const generated = GetTsStringFromUnits(collectConvertUnits(tmpDir));
+  assert.ok(generated.includes("export namespace StoryCsv"));
+  // Both columns survive; the omitted `flag` is present (empty) on ch02's row.
+  assert.ok(generated.includes("        flag: string;"));
+  assert.ok(generated.includes("flag: ''"));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// A real type clash on a shared column still rejects the merge (and warns).
+test("optional columns rejects a genuine type conflict", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  const storyDir = path.join(tmpDir, "story");
+  fs.mkdirSync(storyDir);
+  fs.writeFileSync(path.join(storyDir, "ch01.csv"), ["id,val", "Index,Number", "a,1"].join("\n"));
+  fs.writeFileSync(path.join(storyDir, "ch02.csv"), ["id,val", "Index,String", "b,x"].join("\n"));
+  const warnings = captureWarnings(() => GetTsStringFromUnits(collectConvertUnits(tmpDir)));
+  assert.ok(warnings.some((w) => w.includes("conflicting types") && w.includes("val")));
+  // The directory is skipped, so no merged namespace is produced.
+  assert.ok(!GetTsStringFromUnits(collectConvertUnits(tmpDir)).includes("export namespace StoryCsv"));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// Proposal #6: an un-mergeable subdirectory is reported with an actionable
+// hint, and `--strict` (threaded as the last arg) turns that into a hard error.
+test("un-mergeable subdirectory warns with a hint, strict throws", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  // An empty subdirectory triggers the "flatten to a single level" / manifest
+  // merge-group hint (the nested-subdir case from the proposal).
+  const emptyDir = path.join(tmpDir, "nested");
+  fs.mkdirSync(emptyDir);
+  const warnings = captureWarnings(() => collectConvertUnits(tmpDir));
+  assert.ok(warnings.some((w) => w.includes("contains no convertible config files") && w.includes("flatten to a single level")));
+  // Strict mode escalates the structural skip to a thrown error.
+  assert.throws(() => collectConvertUnits(tmpDir, false, true));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// Proposal #3: a config2ts.manifest.json merge group flattens deeply-nested
+// csv files (recursive) into one virtual table, with nested paths as sub-table
+// keys, instead of the default single-level behavior.
+test("manifest merge group flattens nested csv recursively", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  fs.writeFileSync(
+    path.join(tmpDir, "config2ts.manifest.json"),
+    JSON.stringify({ mergeGroups: [{ dir: "activities", recursive: true }] }),
+  );
+  const activitiesDir = path.join(tmpDir, "activities");
+  fs.mkdirSync(activitiesDir, { recursive: true });
+  fs.mkdirSync(path.join(activitiesDir, "dinomap"));
+  fs.mkdirSync(path.join(activitiesDir, "halloween"));
+  fs.writeFileSync(path.join(activitiesDir, "dinomap", "timeline.csv"), ["id,text", "Index,String", "1,one"].join("\n"));
+  fs.writeFileSync(path.join(activitiesDir, "halloween", "timeline.csv"), ["id,text", "Index,String", "2,two"].join("\n"));
+  const generated = GetTsStringFromUnits(collectConvertUnits(tmpDir));
+  assert.ok(generated.includes("export namespace ActivitiesCsv"));
+  // Nested paths become the FileMap sub-table keys.
+  assert.ok(generated.includes('export type File = "dinomap/timeline" | "halloween/timeline";'));
+  assert.ok(generated.includes("        'dinomap/timeline': ["));
+  // No separate per-directory namespaces are emitted for the nested dirs.
+  assert.ok(!generated.includes("DinomapCsv"));
+  assert.ok(!generated.includes("HalloweenCsv"));
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// Proposal #8: verifyAgainst compares freshly generated output against a
+// captured snapshot and detects drift.
+test("verifyAgainst matches a snapshot and reports drift", function () {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
+  fs.writeFileSync(path.join(tmpDir, "t.csv"), ["id,text", "Index,String", "1,a", "2,b"].join("\n"));
+  const units = collectConvertUnits(tmpDir);
+  const refPath = path.join(tmpDir, "ref.ts");
+  fs.writeFileSync(refPath, GetTsStringFromUnits(units));
+  assert.equal(verifyAgainst(units, refPath), true);
+  // Any change to the reference (even a trailing comment) is flagged.
+  fs.writeFileSync(refPath, GetTsStringFromUnits(units) + "\n// drift");
+  assert.equal(verifyAgainst(units, refPath), false);
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });

@@ -217,7 +217,69 @@ const adjustMeta = ASSETS.public.image['adjust-horizontal'];
     -n, --name <name>      output file name (single mode) / index file name (split mode). default: csv.ts
     -a, --assets <path>    set assets resource directory for asset index (optional, skip asset index if omitted)
     -m, --mode <mode>      output mode: single (merge into one file) or split (one file per table + index.ts). default: single
+    --auto-qualify        qualify merged-table keys as "<file>:<index>" so sibling member files that each number from 1 never collide (opt-in; see Isomorphic subdirectory merge below)
+    --strict               treat un-mergeable subdirectories as errors instead of warnings (fails the build on structural skips)
+    --verify-against <path>  verify generated output matches a reference snapshot (.ts, or .json wrapping the text under "source") and exit non-zero on drift, without writing output
 ```
+
+## Advanced features
+
+### Declarative primary key (`# key:`)
+
+By default the primary key is the column typed `Index` / `EnumIndex`. A leading
+directive can name any column as the key instead, so a table whose natural key
+is not an `Index` column needs no redundant column:
+
+```
+# key: code
+name,code,desc
+String,Number,String
+alpha,1,first
+```
+
+`code` then drives `Map` / `byKey`. A `# key:` naming a missing column warns and
+falls back to type-based detection.
+
+### Native matrix mode (`# matrix:`)
+
+A file whose first line is `# matrix: <string|number|boolean>` is emitted as a
+single variable-length 2D grid (`Matrix: T[][]`) instead of per-row `Record`s —
+faithful for boards / timelines / maps without `C0..Cn` padding:
+
+```
+# matrix: number
+1,2,3
+4,5
+6,7,8,9
+```
+
+### Optional columns in merged subdirectories
+
+When member files of a merged subdirectory share most columns but some files omit
+a few, the missing cells are padded with empty (parsed to the column's type
+default) instead of rejecting the whole merge. Only a genuine type clash on a
+shared column (e.g. `Number` vs `String`) is still rejected with a warning.
+
+### Manifest merge groups (recursive)
+
+A `config2ts.manifest.json` next to the config directory can flatten
+deeply-nested csv into one virtual table, so `activities/<id>/timeline.csv`
+maps to a single namespace with nested paths as sub-table keys:
+
+```json
+{ "mergeGroups": [{ "dir": "activities", "recursive": true }] }
+```
+
+When a directory is named in `mergeGroups` it is merged via the manifest path
+rather than the default single-level merge, so nested files are not skipped.
+
+### Dynamic key lookup (`byKey`)
+
+Every index-keyed namespace (plain or merged) also exports
+`byKey(key: string): Record | undefined`. This is the safe escape hatch for
+consuming a merged table by a runtime string key without triggering `TS7053`;
+it deliberately does **not** add a `string` index signature to `FileMap` (which
+would silence the compile-time guard that catches typos like `FileMap["typo"]`).
 
 ## supported file formats
 

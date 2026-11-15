@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Command } from "commander";
-import { startConvert } from "./config2ts";
+import { startConvert, collectConvertUnits, verifyAgainst } from "./config2ts";
 
 const pkgPath = path.join(__dirname, "..", "package.json");
 const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
@@ -16,6 +16,8 @@ program
   .option("-a, --assets <path>", "set assets resource directory for asset index (optional, skip asset index if omitted)")
   .option("-m, --mode <mode>", "output mode: single (merge into one file) or split (one file per table + index.ts)", "single")
   .option("--auto-qualify", "qualify merged-table keys as <file>:<index> so sibling member files that each number from 1 never collide", false)
+  .option("--strict", "treat un-mergeable subdirectories as errors instead of warnings (fails the build on structural skips)", false)
+  .option("--verify-against <path>", "verify generated output matches a reference snapshot (.ts or .json) and exit non-zero on drift, without writing output")
   .parse(process.argv);
 
 const options = program.opts();
@@ -41,4 +43,14 @@ if (mode === "single" && options.mode !== "single") {
 }
 
 const autoQualify = options.autoQualify === true || options.autoQualify === "true";
-startConvert(dir, outDir, options.name, assetsDir, mode, autoQualify);
+const strict = options.strict === true || options.strict === "true";
+
+if (options.verifyAgainst) {
+  // Verify mode: build the units (warnings still surface) and compare the
+  // generated output against the reference snapshot instead of writing files.
+  const units = collectConvertUnits(dir, autoQualify, strict);
+  const ok = verifyAgainst(units, options.verifyAgainst);
+  process.exit(ok ? 0 : 1);
+}
+
+startConvert(dir, outDir, options.name, assetsDir, mode, autoQualify, strict);

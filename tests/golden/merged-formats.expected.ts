@@ -21,6 +21,8 @@ export namespace ZBaseCsv {
     export const Map: { [id: string]: Record } = {};
     for (const v of List) { Map[v.id] = v; };
 
+    export function byKey(key: string): Record | undefined { return (Map as { [k: string]: Record | undefined })[key]; }
+
 };
 
 export namespace AUserCsv {
@@ -39,6 +41,8 @@ export namespace AUserCsv {
 
     export const Map: { [id: string]: Record } = {};
     for (const v of List) { Map[v.id] = v; };
+
+    export function byKey(key: string): Record | undefined { return (Map as { [k: string]: Record | undefined })[key]; }
 
 };
 
@@ -97,6 +101,8 @@ export namespace SkillCsv {
     export const Map: { [id: string]: Record } = {};
     for (const v of List) { Map[v.id] = v; };
 
+    export function byKey(key: string): Record | undefined { return (Map as { [k: string]: Record | undefined })[key]; }
+
 };
 
 export namespace SkilllevelCsv {
@@ -148,6 +154,8 @@ export namespace SkilllevelCsv {
     export const Map: { [id: string]: Record } = {};
     for (const v of List) { Map[v.id] = v; };
 
+    export function byKey(key: string): Record | undefined { return (Map as { [k: string]: Record | undefined })[key]; }
+
 };
 
 export const TomlFileToml = {
@@ -182,5 +190,7 @@ export namespace UnitCsv {
 
     export const Map: { [id: string]: Record } = {};
     for (const v of List) { Map[v.id] = v; };
+
+    export function byKey(key: string): Record | undefined { return (Map as { [k: string]: Record | undefined })[key]; }
 
 };

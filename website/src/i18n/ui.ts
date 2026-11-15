@@ -213,4 +213,6 @@ export namespace UiCsv {
     export const Map: { [id: string]: Record } = {};
     for (const v of List) { Map[v.key] = v; };
 
+    export function byKey(key: string): Record | undefined { return (Map as { [k: string]: Record | undefined })[key]; }
+
 };
