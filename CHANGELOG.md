@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.12.0] - 2026-11-24
+
+Two opt-in features briefly shipped in 2.11.0 are removed. Neither had real
+consumers, and **default output is unchanged** — all fixture goldens remain
+byte-identical. Consumers relying on either directive will need to adjust, but
+no existing config without them changes behavior.
+
 ### Removed
 
 - Removed the `# matrix: <type>` header directive and its `Matrix: T[][]`
@@ -78,6 +85,7 @@ minor version bump.
   later row previously overwrote the earlier one. Enable `--auto-qualify` to
   separate the key spaces at the source.
 
-[Unreleased]: https://github.com/livingyang/config2ts/compare/v2.11.1...HEAD
+[Unreleased]: https://github.com/livingyang/config2ts/compare/v2.12.0...HEAD
+[2.12.0]: https://github.com/livingyang/config2ts/compare/v2.11.1...v2.12.0
 [2.11.1]: https://github.com/livingyang/config2ts/compare/v2.11.0...v2.11.1
 [2.11.0]: https://github.com/livingyang/config2ts/compare/v2.10.1...v2.11.0
