@@ -432,34 +432,6 @@ test("byKey dynamic lookup is emitted and compiles", { timeout: 120000 }, functi
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
-// Proposal #7: `# key: <col>` declares a non-Index column as the primary key.
-test("hash-key directive declares a custom primary key column", function () {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
-  const csvPath = path.join(tmpDir, "things.csv");
-  fs.writeFileSync(
-    csvPath,
-    ["# key: code", "name,code,desc", "String,Number,String", "alpha,1,first", "beta,2,second"].join("\n"),
-  );
-  const generated = GetTsStringFromFileList([csvPath]);
-  assert.ok(generated.includes("export namespace ThingsCsv"));
-  // The declared column drives the Map key, not the (absent) Index column.
-  assert.ok(generated.includes("        code: number;"));
-  assert.ok(generated.includes("Map[v.code] = v;"));
-  assert.ok(generated.includes("export function byKey(key: string): Record | undefined"));
-  fs.rmSync(tmpDir, { recursive: true, force: true });
-});
-
-// A `# key:` directive naming a missing column warns and falls back to
-// type-based key detection instead of silently mis-keying the table.
-test("hash-key directive with unknown column warns and falls back", function () {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
-  const csvPath = path.join(tmpDir, "things.csv");
-  fs.writeFileSync(csvPath, ["# key: missing", "id,name", "Index,String", "1,a"].join("\n"));
-  const warnings = captureWarnings(() => GetTsStringFromFileList([csvPath]));
-  assert.ok(warnings.some((w) => w.includes("# key: missing") && w.includes("does not exist")));
-  fs.rmSync(tmpDir, { recursive: true, force: true });
-});
-
 // Proposal #2 (lightweight): merged member files may omit optional columns;
 // the missing cells are padded with empty (parsed to the column's type default)
 // rather than rejecting the whole merge.

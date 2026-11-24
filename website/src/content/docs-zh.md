@@ -183,7 +183,6 @@ config2ts -d ./config -o ./src/types
 
 该组目录在默认的一层合并循环中会被跳过，只由 manifest 路径处理，避免重复；组内文件若列不完全一致，按列并集处理（缺列补零值），仅当同一列类型冲突时才拒绝合并并告警。
 
-> 单独的 `# key:` 头部指令在合并成员里会被自动剥离，以免影响合并表头。
 
 ### 质量闸门（--strict / --verify-against）
 
@@ -225,31 +224,6 @@ Index,String[],Number[]
 ```
 
 生成 `tags: ['a,b','c']`、`nums: [1,2,3]`；普通 `x,y,z` 仍按逗号切成 `['x','y','z']` 不变。
-
-#### 头部指令（# key）
-
-CSV 首部可用以 `#` 开头的指令行声明表级行为（必须紧跟在字段名行之前、单独成行）：
-
-- `# key: <列名>`：显式指定某一列为主键（覆盖按类型推导主键的默认规则）。该列用于生成 `Map`；列不存在则告警并回退默认规则。
-
-例如用 `code`（而非 `Index` 列）作为主键：
-
-```csv
-# key: code
-name,code,desc
-String,Number,String
-alpha,1,first
-beta,2,second
-```
-
-生成物里 `Map` 按 `code` 建键，`byKey` 也据此查询：
-
-```typescript
-export const Map: { [id: string]: Record } = {};
-for (const v of List) { Map[v.code] = v; };
-
-export function byKey(key: string): Record | undefined { return (Map as { [k: string]: Record | undefined })[key]; }
-```
 
 ### INI
 

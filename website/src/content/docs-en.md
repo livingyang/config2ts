@@ -184,7 +184,6 @@ config2ts -d ./config -o ./src/types
 
 The group directory is skipped by the default single-level merge loop and handled only by the manifest path, so it is never processed twice; if member files don't share every column, a column union is used (missing columns padded with zero values), and the merge is rejected with a warning only when the same column has conflicting types across files.
 
-> Standalone `# key:` header directives inside merge members are stripped automatically so they don't corrupt the merged header.
 
 ### Quality gates (--strict / --verify-against)
 
@@ -226,31 +225,6 @@ Index,String[],Number[]
 ```
 
 Generates `tags: ['a,b','c']` and `nums: [1,2,3]`; a plain `x,y,z` still splits into `['x','y','z']` unchanged.
-
-#### Header directives (# key)
-
-A `#`-prefixed directive line at the very top of a CSV (immediately before the field-name row, on its own line) declares table-level behavior:
-
-- `# key: <column>` — explicitly name a column as the primary key (overriding the default type-based key detection). That column drives `Map`; if the column doesn't exist, a warning is printed and the default rule is used.
-
-For example, use `code` (rather than an `Index` column) as the primary key:
-
-```csv
-# key: code
-name,code,desc
-String,Number,String
-alpha,1,first
-beta,2,second
-```
-
-In the output, `Map` is keyed by `code`, and `byKey` looks up accordingly:
-
-```typescript
-export const Map: { [id: string]: Record } = {};
-for (const v of List) { Map[v.code] = v; };
-
-export function byKey(key: string): Record | undefined { return (Map as { [k: string]: Record | undefined })[key]; }
-```
 
 ### INI
 

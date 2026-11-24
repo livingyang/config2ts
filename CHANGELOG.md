@@ -13,7 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   output mode (introduced in 2.11.0). It had no real consumers — the
   variable-length 2D tables that motivated it live as ref JSON, not CSV — and
   it bypassed the normal `List` / `Map` / `FileMap` pipeline, adding a separate
-  output path for an opt-in feature nobody used. `# key:` is unaffected.
+  output path for an opt-in feature nobody used.
+- Removed the `# key: <col>` header directive (introduced in 2.11.0). It had no
+  real consumers. The primary key is now always the column typed `Index` /
+  `EnumIndex`, which drives `Map` / `byKey`; the header-directive parsing layer
+  (`parseDirectives`) was removed with it. Tables without an `Index` /
+  `EnumIndex` column still produce no `Map`, as before 2.11.0.
 
 ## [2.11.1] - 2026-11-24
 

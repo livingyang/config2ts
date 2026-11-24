@@ -224,21 +224,11 @@ const adjustMeta = ASSETS.public.image['adjust-horizontal'];
 
 ## Advanced features
 
-### Declarative primary key (`# key:`)
+### Primary key and `Map`
 
-By default the primary key is the column typed `Index` / `EnumIndex`. A leading
-directive can name any column as the key instead, so a table whose natural key
-is not an `Index` column needs no redundant column:
-
-```
-# key: code
-name,code,desc
-String,Number,String
-alpha,1,first
-```
-
-`code` then drives `Map` / `byKey`. A `# key:` naming a missing column warns and
-falls back to type-based detection.
+The column typed `Index` / `EnumIndex` is the primary key: it drives the
+generated `Map` (and `byKey`). Rows with an empty key are dropped. A table
+needs an `Index` / `EnumIndex` column to get a `Map`.
 
 ### Optional columns in merged subdirectories
 
