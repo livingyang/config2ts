@@ -240,19 +240,6 @@ alpha,1,first
 `code` then drives `Map` / `byKey`. A `# key:` naming a missing column warns and
 falls back to type-based detection.
 
-### Native matrix mode (`# matrix:`)
-
-A file whose first line is `# matrix: <string|number|boolean>` is emitted as a
-single variable-length 2D grid (`Matrix: T[][]`) instead of per-row `Record`s —
-faithful for boards / timelines / maps without `C0..Cn` padding:
-
-```
-# matrix: number
-1,2,3
-4,5
-6,7,8,9
-```
-
 ### Optional columns in merged subdirectories
 
 When member files of a merged subdirectory share most columns but some files omit

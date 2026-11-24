@@ -460,22 +460,6 @@ test("hash-key directive with unknown column warns and falls back", function () 
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
-// Proposal #4b: `# matrix: <type>` emits the whole file as a variable-length
-// 2D grid (Matrix: T[][]) instead of per-row Records; row lengths are kept.
-test("hash-matrix directive emits a variable-length 2D matrix", function () {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "config2ts-"));
-  const csvPath = path.join(tmpDir, "board.csv");
-  fs.writeFileSync(csvPath, ["# matrix: number", "1,2,3", "4,5", "6,7,8,9"].join("\n"));
-  const generated = GetTsStringFromFileList([csvPath]);
-  assert.ok(generated.includes("export namespace BoardCsv"));
-  assert.ok(generated.includes("export type Cell = number;"));
-  assert.ok(generated.includes("export const Matrix: Cell[][] = [[1,2,3],[4,5],[6,7,8,9]];"));
-  // Variable-length rows are preserved (no C0..Cn padding).
-  assert.ok(generated.includes("export const RowCount: number = 3;"));
-  assert.ok(generated.includes("export const ColCount: number = 4;"));
-  fs.rmSync(tmpDir, { recursive: true, force: true });
-});
-
 // Proposal #2 (lightweight): merged member files may omit optional columns;
 // the missing cells are padded with empty (parsed to the column's type default)
 // rather than rejecting the whole merge.

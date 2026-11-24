@@ -184,7 +184,7 @@ config2ts -d ./config -o ./src/types
 
 The group directory is skipped by the default single-level merge loop and handled only by the manifest path, so it is never processed twice; if member files don't share every column, a column union is used (missing columns padded with zero values), and the merge is rejected with a warning only when the same column has conflicting types across files.
 
-> Standalone `# key:` / `# matrix:` header directives inside merge members are stripped automatically so they don't corrupt the merged header.
+> Standalone `# key:` header directives inside merge members are stripped automatically so they don't corrupt the merged header.
 
 ### Quality gates (--strict / --verify-against)
 
@@ -227,28 +227,11 @@ Index,String[],Number[]
 
 Generates `tags: ['a,b','c']` and `nums: [1,2,3]`; a plain `x,y,z` still splits into `['x','y','z']` unchanged.
 
-#### Header directives (# key / # matrix)
+#### Header directives (# key)
 
 A `#`-prefixed directive line at the very top of a CSV (immediately before the field-name row, on its own line) declares table-level behavior:
 
 - `# key: <column>` — explicitly name a column as the primary key (overriding the default type-based key detection). That column drives `Map`; if the column doesn't exist, a warning is printed and the default rule is used.
-- `# matrix: <string|number|boolean>` — emit the whole file as a **variable-length 2D matrix** instead of per-row `Record`s. Generates `Matrix: Cell[][]` (with `RowCount` / `ColCount`), suited to adjacency maps, pixel grids, level layouts, and other purely positional data.
-
-```csv
-# matrix: number
-1,2,3
-4,5
-6,7,8,9
-```
-
-```typescript
-export type Cell = number;
-export const Matrix: Cell[][] = [[1,2,3],[4,5],[6,7,8,9]];
-export const RowCount: number = 3;
-export const ColCount: number = 4;
-```
-
-> Matrix mode and per-row `Record`s are mutually exclusive; the same file can't be both a matrix and declare an `Index`.
 
 ### INI
 

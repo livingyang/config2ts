@@ -183,7 +183,7 @@ config2ts -d ./config -o ./src/types
 
 该组目录在默认的一层合并循环中会被跳过，只由 manifest 路径处理，避免重复；组内文件若列不完全一致，按列并集处理（缺列补零值），仅当同一列类型冲突时才拒绝合并并告警。
 
-> 单独的 `# key:` / `# matrix:` 头部指令在合并成员里会被自动剥离，以免影响合并表头。
+> 单独的 `# key:` 头部指令在合并成员里会被自动剥离，以免影响合并表头。
 
 ### 质量闸门（--strict / --verify-against）
 
@@ -226,28 +226,11 @@ Index,String[],Number[]
 
 生成 `tags: ['a,b','c']`、`nums: [1,2,3]`；普通 `x,y,z` 仍按逗号切成 `['x','y','z']` 不变。
 
-#### 头部指令（# key / # matrix）
+#### 头部指令（# key）
 
 CSV 首部可用以 `#` 开头的指令行声明表级行为（必须紧跟在字段名行之前、单独成行）：
 
 - `# key: <列名>`：显式指定某一列为主键（覆盖按类型推导主键的默认规则）。该列用于生成 `Map`；列不存在则告警并回退默认规则。
-- `# matrix: <string|number|boolean>`：把整张表作为**变长二维矩阵**导出，不逐行生成 `Record`。生成 `Matrix: Cell[][]`（含 `RowCount` / `ColCount`），适合邻接表、像素图、关卡网格等位置型数据。
-
-```csv
-# matrix: number
-1,2,3
-4,5
-6,7,8,9
-```
-
-```typescript
-export type Cell = number;
-export const Matrix: Cell[][] = [[1,2,3],[4,5],[6,7,8,9]];
-export const RowCount: number = 3;
-export const ColCount: number = 4;
-```
-
-> 矩阵模式与逐行 `Record` 互斥；同文件不能既做矩阵又声明 `Index`。
 
 ### INI
 

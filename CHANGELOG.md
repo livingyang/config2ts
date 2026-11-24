@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- Removed the `# matrix: <type>` header directive and its `Matrix: T[][]`
+  output mode (introduced in 2.11.0). It had no real consumers — the
+  variable-length 2D tables that motivated it live as ref JSON, not CSV — and
+  it bypassed the normal `List` / `Map` / `FileMap` pipeline, adding a separate
+  output path for an opt-in feature nobody used. `# key:` is unaffected.
+
 ## [2.11.1] - 2026-11-24
 
 Security patch. No API or output changes.
@@ -20,8 +28,8 @@ Security patch. No API or output changes.
 ## [2.11.0] - 2026-11-15
 
 This release adds a batch of quality-of-life features requested from real-world
-use (large merged tables, dynamic lookups, variable-length grids, and a drift
-gate for CI). **All new behavior is opt-in or backwards compatible** — the
+use (large merged tables, dynamic lookups, and a drift gate for CI). **All new
+behavior is opt-in or backwards compatible** — the
 default output of existing commands and configs is unchanged, so this is a
 minor version bump.
 
