@@ -233,6 +233,25 @@ A `#`-prefixed directive line at the very top of a CSV (immediately before the f
 
 - `# key: <column>` — explicitly name a column as the primary key (overriding the default type-based key detection). That column drives `Map`; if the column doesn't exist, a warning is printed and the default rule is used.
 
+For example, use `code` (rather than an `Index` column) as the primary key:
+
+```csv
+# key: code
+name,code,desc
+String,Number,String
+alpha,1,first
+beta,2,second
+```
+
+In the output, `Map` is keyed by `code`, and `byKey` looks up accordingly:
+
+```typescript
+export const Map: { [id: string]: Record } = {};
+for (const v of List) { Map[v.code] = v; };
+
+export function byKey(key: string): Record | undefined { return (Map as { [k: string]: Record | undefined })[key]; }
+```
+
 ### INI
 
 ```ini

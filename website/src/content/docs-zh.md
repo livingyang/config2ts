@@ -232,6 +232,25 @@ CSV 首部可用以 `#` 开头的指令行声明表级行为（必须紧跟在�
 
 - `# key: <列名>`：显式指定某一列为主键（覆盖按类型推导主键的默认规则）。该列用于生成 `Map`；列不存在则告警并回退默认规则。
 
+例如用 `code`（而非 `Index` 列）作为主键：
+
+```csv
+# key: code
+name,code,desc
+String,Number,String
+alpha,1,first
+beta,2,second
+```
+
+生成物里 `Map` 按 `code` 建键，`byKey` 也据此查询：
+
+```typescript
+export const Map: { [id: string]: Record } = {};
+for (const v of List) { Map[v.code] = v; };
+
+export function byKey(key: string): Record | undefined { return (Map as { [k: string]: Record | undefined })[key]; }
+```
+
 ### INI
 
 ```ini
