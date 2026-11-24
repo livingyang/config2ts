@@ -41,3 +41,6 @@ dist/test
 
 # Compiled tests (node:test run output)
 .test-build
+
+# WorkBuddy local memory — private working notes, never commit to this public repo
+.workbuddy/
