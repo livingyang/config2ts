@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.11.1] - 2026-11-24
+
+Security patch. No API or output changes.
+
+### Fixed
+
+- Upgraded `toml` from 4.3.0 to 5.0.1 to resolve four high-severity advisories
+  (CVE-2026-114141 / 114142 / 114143 / 114144). Verified all fixture goldens
+  remain byte-identical, so generated output is unchanged.
+
 ## [2.11.0] - 2026-11-15
 
 This release adds a batch of quality-of-life features requested from real-world
@@ -55,5 +65,6 @@ minor version bump.
   later row previously overwrote the earlier one. Enable `--auto-qualify` to
   separate the key spaces at the source.
 
-[Unreleased]: https://github.com/livingyang/config2ts/compare/v2.11.0...HEAD
+[Unreleased]: https://github.com/livingyang/config2ts/compare/v2.11.1...HEAD
+[2.11.1]: https://github.com/livingyang/config2ts/compare/v2.11.0...v2.11.1
 [2.11.0]: https://github.com/livingyang/config2ts/compare/v2.10.1...v2.11.0

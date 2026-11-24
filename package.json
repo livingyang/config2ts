@@ -1,6 +1,6 @@
 {
   "name": "config2ts",
-  "version": "2.11.0",
+  "version": "2.11.1",
   "description": "Generate type-safe TypeScript from CSV/INI/TOML config tables — inferred types, enums, cross-table references, and a typed asset index, all from one CLI command.",
   "main": "lib/config2ts.js",
   "types": "lib/config2ts.d.ts",
@@ -44,7 +44,7 @@
     "d3-dsv": "^3.0.1",
     "ini": "^3.0.1",
     "json5": "^2.2.3",
-    "toml": "^4.1.2"
+    "toml": "^5.0.1"
   },
   "devDependencies": {
     "@types/node": "^24.5.2",
